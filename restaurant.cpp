@@ -26,7 +26,7 @@ void simulate(string filename) {
 	// INITIAL COMMAND LINE INPUT
 	string line = "";
 	while(getline(input, line)) {
-		cout << line << endl;
+		// cout << line << endl;
 		int index = 0;
 		string keyword = "";
 

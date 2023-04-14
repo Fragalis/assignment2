@@ -209,6 +209,7 @@ public:
         size = 0;
     }
 
+    // For testing purposes
     void PrintTree() {
         _printTree("", root, false);
         cout << endl;

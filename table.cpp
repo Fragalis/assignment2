@@ -102,6 +102,7 @@ public:
         this->size = 0;
     }
 
+    // For testing purposes
     void PrintTable() {
         _print();
         cout << endl;
