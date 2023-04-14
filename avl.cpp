@@ -6,11 +6,12 @@ public:
     AVLNode *left, *right;
 
     AVLNode(Table table) {
-        this->table = table;
+        this->table.SetTable(table);
         this->left = NULL;
         this->right = NULL;
     }
     ~AVLNode() {
+        this->table.ResetTable();
         this->left = NULL;
         this->right = NULL;
         // cout << "NODE DESTRUCTOR" << endl;
@@ -19,6 +20,9 @@ public:
 
 class AVLTree {
 private:
+    AVLNode *root;
+    int size;
+    
     AVLNode* _rotateLeft(AVLNode *node) { // UNBALANCE RIGHT TREE -> LEFT ROTATION
         // cout << "ROTATE LEFT" << endl;
 
@@ -86,13 +90,9 @@ private:
                     temp = root;
                     root = NULL;
                 }
-                else {
-                    root->table.id = temp->table.id;
-                    root->table.result = temp->table.result;
-                }
+                else root->table.SetTable(temp->table);
 
                 delete temp;
-
                 if(root) { // RESET POINTER
                     root->left = NULL;
                     root->right = NULL;
@@ -100,8 +100,7 @@ private:
             }
             else { // ROOT HAS 2 CHILDREN
                 Table newTable = getMaxNode(root->left);
-                root->table.id = newTable.id;
-                root->table.result = newTable.result;
+                root->table.SetTable(newTable);
                 root->left = _deleteNode(root->left, newTable);
             }
         }
@@ -167,8 +166,6 @@ protected:
         return getHeightRecord(root->right) - getHeightRecord(root->left);
     }
 public:
-    AVLNode *root;
-    int size = 0;
 
     AVLTree() {
         this->root = NULL;
@@ -185,7 +182,7 @@ public:
     }
 
     bool IsFull() {
-        return size >= MAXSIZE;
+        return (size >= MAXSIZE);
     }
 
     void Insert(Table table) {
@@ -210,5 +207,6 @@ public:
 
     void PrintTree() {
         _printTree("", root, false);
+        cout << endl;
     }
 };

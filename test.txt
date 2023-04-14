@@ -1,10 +1,10 @@
-REG Johnuigfifbahjasbdfhjbasdhjf
-REG iuasgfuigweibjaskdfbjksadf
-REG iuiwehruihqwUIAGSIDiernbsandfb
-REG uiewhqruihqiuwerhnbdasnbfnmasd
-REG ukkajhsdfjkasbndbmnFJKHJKsdbfsabdf
+REG Jhnuigfifbahjasbdfhjbasdhjf
+REG sgfuigweibjaskdfbjksadf
+REG iwehruihqwUIAGSIDiernbsandfb
+REG uewhqruihqiuwerhnbdasnbfnmasd
+REG ukajhsdfjkasbndbmnFJKHJKsdbfsabdf
 REG kjasdbfjksbDFFDFFfdjksabfdjkasdf
-REG skjafdbkjasfnmFFFFsaddnfdf
+REG skjafdbkasfnmFFFFsaddnfdf
 CLE 5
 PrintHT
 PrintAVL

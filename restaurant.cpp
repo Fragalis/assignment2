@@ -11,6 +11,7 @@ void simulate(string filename) {
 	vector<bool> RecordID(MAXSIZE + 1, false);
 
 	// LOCATION 1: Hash-Table
+	HashTable Location_HashTable;
 
 	// LOCATION 2: AVL Tree
 	AVLTree *Location_AVL = new AVLTree();
@@ -43,6 +44,8 @@ void simulate(string filename) {
 
 			// HuffmanEncoding(string name, bool caseSensitive)
 			int customerResult = HuffmanEncoding(name, 0);
+			// customerResult = customerResult + rand()%2; // Generating equal odd-even prob
+
 			cout << customerResult << endl;
 
 			// If customerResult % MAXSIZE = 0 -> set ID to MAXSIZE
@@ -70,16 +73,20 @@ void simulate(string filename) {
 			}
 			else { // There is at least 1 table, add a customer
 				Table newTable{(customerID - 1)%MAXSIZE + 1, customerResult};
-				if(customerResult%2 == 0 || false) { // IF Customer is located in AVL || Hash-Table Area is Full.
+
+				if(customerResult%2 == 0 || Location_HashTable.IsFull()) { // IF Customer is located in AVL || Hash-Table Area is Full.
 					Location_AVL->Insert(newTable);
+					cout << "AVL TREE" << endl;
+					 Location_AVL->PrintTree();
 				}
+				else if(customerResult%2 == 1 || Location_AVL->IsFull()) { // IF Customer is located in Hash-Table || AVL Area is Full
+					Location_HashTable.AddTable(newTable, customerResult%3);
+					cout << "HASH TABLE" << endl;
+					 Location_HashTable.PrintTable();
+				}
+
+				// We will push current table into customer query for removal
 			}
-
-
-			// FOR TABLE ID TESTING
-			// for(int i = 1; i <= MAXSIZE; ++i) cout << RecordID[i] << " ";
-			// cout << endl;
-			
 		}
 	}
 
