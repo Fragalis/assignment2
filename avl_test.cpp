@@ -14,14 +14,5 @@ int main() {
     }
     printBT(avl_sample); cout << endl;
 
-
-    for(int i = 0; i < SIZE>>2; ++i) {
-        Table table;
-        table.id = rand()%MAXSIZE + 1;
-        table.result = table_result[rand()%SIZE];
-        cout << "Delete table result: " << table.result << endl;
-        avl_sample->Delete(table);
-        printBT(avl_sample); cout << endl;
-    }
     avl_sample->~AVLTree();
 }
