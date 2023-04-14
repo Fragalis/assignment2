@@ -45,7 +45,12 @@ private:
         return (index%MAXSIZE);
     }
 
+    void _clear() {
+        for(int i = 0; i < MAXSIZE; ++i) key[i].ResetTable();
+    }
+
     void _print() {
+        if(size == 0) cout << "NO ELEMENT" << endl;
         for(int i = 0; i < size; ++i) {
             cout << "Address: " << i << "\t";
             key[i].Print();
@@ -59,12 +64,15 @@ public:
     }
 
     ~HashTable() {
-        for(int i = 0; i < MAXSIZE; ++i) key[i].ResetTable();
-        this->size = 0;
+        Clear();
+    }
+
+    int GetSize() {
+        return this->size;
     }
 
     bool IsFull() {
-        return (size >= MAXSIZE);
+        return (this->size >= MAXSIZE);
     }
 
     void AddTable(Table table, int address) {
@@ -73,8 +81,29 @@ public:
         key[address].SetTable(table);
         ++size;
     }
+    
+    // Remove table at position, return id of that table
+    int GetTableID(int position) {
+        if(this->size == 0 || position < 0 || position >= MAXSIZE) throw "Out of Bounds";
+        return key[position].id;
+    }
+
+    void RemoveTable(Table table) {
+        for(int i = 0; i < MAXSIZE; ++i) {
+            if(table.id == key[i].id && table.result == key[i].result) {
+                key[i].ResetTable();
+                return;
+            }
+        }
+    }
+
+    void Clear() {
+        _clear();
+        this->size = 0;
+    }
 
     void PrintTable() {
         _print();
+        cout << endl;
     }
 };

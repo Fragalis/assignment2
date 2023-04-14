@@ -23,7 +23,8 @@ private:
     AVLNode *root;
     int size;
     
-    AVLNode* _rotateLeft(AVLNode *node) { // UNBALANCE RIGHT TREE -> LEFT ROTATION
+    // UNBALANCE RIGHT TREE -> LEFT ROTATION
+    AVLNode* _rotateLeft(AVLNode *node) {
         // cout << "ROTATE LEFT" << endl;
 
         AVLNode *rightChild = node->right;
@@ -33,7 +34,8 @@ private:
         return rightChild;
     }
     
-    AVLNode* _rotateRight(AVLNode *node) { // UNBALANCE RIGHT TREE -> LEFT ROTATION
+    // UNBALANCE RIGHT TREE -> LEFT ROTATION
+    AVLNode* _rotateRight(AVLNode *node) { 
         // cout << "ROTATE RIGHT" << endl;        
         
         AVLNode *leftChild = node->left;
@@ -43,7 +45,8 @@ private:
         return leftChild;
     }
 
-    AVLNode* _insertNode(AVLNode *root, Table table) { // INSERT NEW NODE
+    // INSERT Node
+    AVLNode* _insertNode(AVLNode *root, Table table) {
         if(!root) {
             AVLNode *node = new AVLNode(table);
             return node;
@@ -72,7 +75,8 @@ private:
         return root;
     }
 
-    AVLNode* _deleteNode(AVLNode *root, Table table) { // DELETE A NODE WHICH IS table TABLE
+    // DELETE node which matchs Table table
+    AVLNode* _deleteNode(AVLNode *root, Table table) {
         if(!root) return root;
 
         // Traverse left tree if result < root->result
@@ -125,23 +129,38 @@ private:
         return root;
     }
 
+    // SEARCH id table based on result:
+    int _search(int result) {
+        AVLNode* traverse = root;
+
+        // Traverse tree, if found node -> return id
+        while(traverse != NULL) {
+            if(result == root->table.result) return traverse->table.id;
+            else if(result > root->table.result) traverse = traverse->right;
+            else traverse = traverse->left;
+        }
+        
+        // If here, so we can't find that result, return 0;
+        return 0;
+    }
+
     void _clear(AVLNode *node) {
         if(!node) return;
         if(node->left) _clear(node->left);
         if(node->right) _clear(node->right);
         delete node;
-        node->left = NULL;
-        node->right = NULL;
+        node = NULL;
     }
 
     void _printTree(const std::string& prefix, const AVLNode* node, bool isLeft)
     {
+        if(size == 0) cout << "NO ELEMENT" << endl;
         if (node != nullptr)
         {
-            std::cout << prefix;
-            std::cout << (isLeft ? "|------ (RIGHT:) " : "L------ (LEFT:) ");
+            cout << prefix;
+            cout << (isLeft ? "|------ (RIGHT:) " : "L------ (LEFT:) ");
             // print the value of the node
-            std::cout << node->table.result << std::endl;
+            cout << "ID: " << node->table.id << " DATA: " << node->table.result << endl;
             // enter the next tree level - left and right branch
             _printTree(prefix + (isLeft ? "|       " : "        "), node->right, true);
             _printTree(prefix + (isLeft ? "|       " : "        "), node->left, false);
@@ -185,18 +204,22 @@ public:
         return (size >= MAXSIZE);
     }
 
-    void Insert(Table table) {
+    void InsertTable(Table table) {
         if(size < MAXSIZE) {
             root = _insertNode(root, table);
             ++size;
         }
     }
 
-    void Delete(Table table) {
+    void DeleteTable(Table table) {
         if(size > 0) {
             root = _deleteNode(root, table);
             --size;
         }
+    }
+
+    int GetTableID(int result) {
+        return _search(result);
     }
 
     void Clear() {
