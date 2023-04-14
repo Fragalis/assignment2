@@ -23,7 +23,7 @@ int main() {
         table.id = 4;
         table.result = table_result[15];
         cout << "Search: "; table.Print(); cout << endl;
-        avl_sample->GetTableID(table);
+        avl_sample->GetTableID(table.result);
     }
     avl_sample->PrintTree();
     avl_sample->~AVLTree();
