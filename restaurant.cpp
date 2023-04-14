@@ -88,8 +88,9 @@ void simulate(string filename) {
 				cout << "FULL SIZE" << endl;
 			}
 			// Add new customer if not full
-			else {
-				Table newTable{(customerID - 1)%MAXSIZE + 1, customerResult};
+			if(!isFull) {
+				Table newTable;
+				newTable.SetTable(customerID, customerResult);
 
 				if(customerResult%2 == 0 || Location_HashTable.IsFull()) { // IF Customer is located in AVL || Hash-Table Area is Full.
 					Location_AVL->InsertTable(newTable);
@@ -171,16 +172,30 @@ void simulate(string filename) {
 					}
 					// The table we delete is in AVL Area
 					else {
-						Table delTable{(number, RecordResult[number])};
+						Table delTable;
+						delTable.SetTable(number, RecordResult[number]);
 						Location_AVL->DeleteTable(delTable);
 						RecordResult[number] = -1;
 						IsHash[number] = true;
 					}
 				}
 			}
+		}
 
-			Location_AVL->PrintTree();
-			Location_HashTable.PrintTable();
+		else if(keyword == "PrintHT") {
+			Location_HashTable.Print_Command();
+		}
+
+		else if(keyword == "PrintAVL") {
+			Location_AVL->Print_Command();
+		}
+		else if(keyword == "PrintMH") {
+			// TO BE IMPLEMENTED
+		}
+
+		// INVALID KEYWORD
+		else {
+			continue;
 		}
 	}
 

@@ -213,4 +213,19 @@ public:
         _printTree("", root, false);
         cout << endl;
     }
+
+    void Print_Command() {
+        queue<AVLNode*> q;
+        q.push(root);
+
+        while(!q.empty()) {
+            AVLNode *curr = q.front();
+            q.pop();
+
+            if(curr->left) q.push(curr->left);
+            if(curr->right) q.push(curr->right);
+
+            cout << curr->table.id << "-" << curr->table.result << "\n";
+        }
+    }
 };

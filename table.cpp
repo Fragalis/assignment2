@@ -17,7 +17,12 @@ public:
         this->result = table.result;
     }
 
-    void ResetTable() {
+    void SetTable(const int id, const int result) {
+        this->id = id;
+        this->result = result;
+    }
+
+    void ResetTable() { 
         id = 0;
         result = 0;
     }
@@ -100,5 +105,11 @@ public:
     void PrintTable() {
         _print();
         cout << endl;
+    }
+
+    void Print_Command() {
+        for(int i = 0; i < MAXSIZE; ++i) {
+            if(!key[i].IsEmpty()) cout << key[i].id << "-" << key[i].result << "\n";
+        }
     }
 };
