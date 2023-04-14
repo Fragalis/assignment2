@@ -13,7 +13,7 @@ public:
     ~AVLNode() {
         this->left = NULL;
         this->right = NULL;
-        cout << "NODE DESTRUCTOR" << endl;
+        // cout << "NODE DESTRUCTOR" << endl;
     }
 };
 
@@ -123,8 +123,30 @@ private:
             }
             return _rotateRight(root);   
         }
-
         return root;
+    }
+
+    void _clear(AVLNode *node) {
+        if(!node) return;
+        if(node->left) _clear(node->left);
+        if(node->right) _clear(node->right);
+        delete node;
+        node->left = NULL;
+        node->right = NULL;
+    }
+
+    void _printTree(const std::string& prefix, const AVLNode* node, bool isLeft)
+    {
+        if (node != nullptr)
+        {
+            std::cout << prefix;
+            std::cout << (isLeft ? "|------ (RIGHT:) " : "L------ (LEFT:) ");
+            // print the value of the node
+            std::cout << node->table.result << std::endl;
+            // enter the next tree level - left and right branch
+            _printTree(prefix + (isLeft ? "|       " : "        "), node->right, true);
+            _printTree(prefix + (isLeft ? "|       " : "        "), node->left, false);
+        }
     }
 
 protected:
@@ -146,11 +168,15 @@ protected:
     }
 public:
     AVLNode *root;
+    int size = 0;
+
     AVLTree() {
         this->root = NULL;
+        size = 0;
     }
     ~AVLTree() {
-        cout << "DESTRUCTOR" << endl;
+        Clear();
+        // cout << "DESTRUCTOR" << endl;
     }
     
     // GET HEIGHT
@@ -158,30 +184,31 @@ public:
         return getHeightRecord(root);
     }
 
+    bool IsFull() {
+        return size >= MAXSIZE;
+    }
+
     void Insert(Table table) {
-        root = _insertNode(root, table);
+        if(size < MAXSIZE) {
+            root = _insertNode(root, table);
+            ++size;
+        }
     }
 
     void Delete(Table table) {
-        root = _deleteNode(root, table);
+        if(size > 0) {
+            root = _deleteNode(root, table);
+            --size;
+        }
+    }
+
+    void Clear() {
+        _clear(root);
+        root = NULL;
+        size = 0;
+    }
+
+    void PrintTree() {
+        _printTree("", root, false);
     }
 };
-
-void printBT(const std::string& prefix, const AVLNode* node, bool isLeft)
-{
-    if (node != nullptr)
-    {
-        std::cout << prefix;
-        std::cout << (isLeft ? "|-- (RIGHT:) " : "L-- (LEFT:) ");
-        // print the value of the node
-        std::cout << node->table.result << std::endl;
-        // enter the next tree level - left and right branch
-        printBT(prefix + (isLeft ? "|   " : "    "), node->right, true);
-        printBT(prefix + (isLeft ? "|   " : "    "), node->left, false);
-    }
-}
-
-void printBT(const AVLTree* tree)
-{
-    printBT("", tree->root, false);
-}

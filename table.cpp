@@ -7,4 +7,8 @@ public:
         this->id = id;
         this->result = result;
     }
+    ~Table() {
+        id = -1;
+        result = -1;
+    }
 };
