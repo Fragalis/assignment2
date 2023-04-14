@@ -1,164 +1,187 @@
 #include "table.cpp"
 
-enum BalanceValue
-{
-    LH = -1,
-    EH = 0,
-    RH = 1
-};
-
-void printNSpace(int n)
-{
-    for (int i = 0; i < n - 1; i++)
-        cout << " ";
-}
-
-void printInteger(int &n)
-{
-    cout << n << " ";
-}
-
 class AVLNode {
 public:
     Table table;
     AVLNode *left, *right;
-    BalanceValue balanceValue;
+
     AVLNode(Table table) {
         this->table = table;
         this->left = NULL;
         this->right = NULL;
-        balanceValue = EH;
     }
-    ~AVLNode(){}
-
-    void SetLeft(AVLNode* left) {
-        this->left = left;
-    }
-    void SetRight(AVLNode* right) {
-        this->right = right;
+    ~AVLNode() {
+        this->left = NULL;
+        this->right = NULL;
+        cout << "NODE DESTRUCTOR" << endl;
     }
 };
 
 class AVLTree {
 private:
-    AVLNode* RotateLeft(AVLNode *node) { // UNBALANCE RIGHT TREE -> LEFT ROTATION
+    AVLNode* _rotateLeft(AVLNode *node) { // UNBALANCE RIGHT TREE -> LEFT ROTATION
+        // cout << "ROTATE LEFT" << endl;
+
         AVLNode *rightChild = node->right;
-        node->right = rightChild->left;
-        rightChild->left = node->right;
+        AVLNode *temp = rightChild->left;
+        rightChild->left = node;
+        node->right = temp;
         return rightChild;
     }
     
-    AVLNode* RotateRight(AVLNode *node) { // UNBALANCE RIGHT TREE -> LEFT ROTATION
+    AVLNode* _rotateRight(AVLNode *node) { // UNBALANCE RIGHT TREE -> LEFT ROTATION
+        // cout << "ROTATE RIGHT" << endl;        
+        
         AVLNode *leftChild = node->left;
-        node->left = leftChild->right;
-        leftChild->right = node->left;
+        AVLNode *temp = leftChild->right;
+        leftChild->right = node;
+        node->left = temp;
         return leftChild;
     }
 
-    AVLNode* InsertNode(AVLNode *root, Table table) { // INSERT NEW NODE
+    AVLNode* _insertNode(AVLNode *root, Table table) { // INSERT NEW NODE
         if(!root) {
             AVLNode *node = new AVLNode(table);
             return node;
         }
-        if(table.result < root->table.result) root->SetLeft(insert(root->left, table));
-        if(table.result >= root->table.result) root->SetRight(insert(root->right, table));
+        if(table.result < root->table.result) root->left = _insertNode(root->left, table);
+        if(table.result >= root->table.result) root->right = _insertNode(root->right, table);
 
-        int balance = GetBalance(root);
+        int balance = getBalance(root);
         
         // RIGHT ORIENTED -> ROTATE LEFT
+        // cout << "BALANCE = " << balance << endl;
         if(balance > 1) {
             if(table.result < root->right->table.result) { // When too much right node
-                root->right = RotateRight(root->right);
+                root->right = _rotateRight(root->right);
             }
-            root->balanceValue = EH;
-            return RotateLeft(root);
+            return _rotateLeft(root);
         }
 
         // LEFT ORIENTED -> ROTATE RIGHT
         if(balance < -1) {
             if(table.result > root->left->table.result) { // When too much left node
-                root->left = RotateLeft(root->left);
+                root->left = _rotateLeft(root->left);
             }
-            root->balanceValue = EH;
-            return RotateRight(root);   
+            return _rotateRight(root);   
         }
         return root;
     }
 
+    AVLNode* _deleteNode(AVLNode *root, Table table) { // DELETE A NODE WHICH IS table TABLE
+        if(!root) return root;
 
-protected:
-    int GetHeightRecord(AVLNode *node) {
-        if(!node) return 0;
-        int leftHeight = this->GetHeightRecord(node->left);
-        int rightHeight = this->GetHeightRecord(node->right);
-        return ((leftHeight > rightHeight)? leftHeight : rightHeight) + 1;
+        // Traverse left tree if result < root->result
+        if(table.result < root->table.result) root->left = _deleteNode(root->left, table);
+
+        // Traverse right tree if result > root->result
+        else if(table.result > root->table.result) root->right = _deleteNode(root->right, table);
+
+        // Found Node to delete
+        else {
+            if(!root->left || !root->right) { // ROOT HAS AT LEAST 1 CHILD
+                AVLNode *temp = (root->left)? root->left : root->right;
+
+                if(temp == NULL) { // ROOT is LEAF
+                    temp = root;
+                    root = NULL;
+                }
+                else {
+                    root->table.id = temp->table.id;
+                    root->table.result = temp->table.result;
+                }
+
+                delete temp;
+
+                if(root) { // RESET POINTER
+                    root->left = NULL;
+                    root->right = NULL;
+                }
+            }
+            else { // ROOT HAS 2 CHILDREN
+                Table newTable = getMaxNode(root->left);
+                root->table.id = newTable.id;
+                root->table.result = newTable.result;
+                root->left = _deleteNode(root->left, newTable);
+            }
+        }
+        // Check if the noot deleted is a leaf -> refer to ROOT HAS AT LEAST 1 CHILD
+        if(!root) return root;
+        int balance = getBalance(root);
+        // RIGHT ORIENTED -> ROTATE LEFT
+        if(balance > 1) {
+            if(getBalance(root->right) < -1) { // When too much left node on right child
+                root->right = _rotateRight(root->right);
+            }
+            return _rotateLeft(root);
+        }
+
+        // LEFT ORIENTED -> ROTATE RIGHT
+        if(balance < -1) {
+            if(getBalance(root->left) > 1) { // When too much right node on left child
+                root->left = _rotateLeft(root->left);
+            }
+            return _rotateRight(root);   
+        }
+
+        return root;
     }
 
-    int GetBalance(AVLNode *root) {
-        return GetHeightRecord(root->right) - GetHeightRecord(root->left);
+protected:
+    int getHeightRecord(AVLNode *node) {
+        if(!node) return 0;
+        int leftHeight = (node->left)? this->getHeightRecord(node->left) : 0;
+        int rightHeight = (node->right)? this->getHeightRecord(node->right) : 0;
+        return ((leftHeight > rightHeight)? leftHeight : rightHeight) + 1;
+    }
+    
+    Table getMaxNode(AVLNode *root) {
+        while(root->right) root = root->right;
+        return root->table;
+    }
+
+    int getBalance(AVLNode *root) {
+        if(!root) return 0;
+        return getHeightRecord(root->right) - getHeightRecord(root->left);
     }
 public:
     AVLNode *root;
     AVLTree() {
         this->root = NULL;
     }
-    ~AVLTree(){}
+    ~AVLTree() {
+        cout << "DESTRUCTOR" << endl;
+    }
     
     // GET HEIGHT
     int GetHeight() {
-        return GetHeightRecord(root);
+        return getHeightRecord(root);
     }
 
-    // PRINT TREE
-    void printTreeStructure()
-    {
-        int height = this->GetHeight();
-        if (this->root == NULL)
-        {
-            cout << "TREE EMPTY\n";
-            return;
-        }
-        queue<AVLNode*> q;
-        q.push(root);
-        AVLNode *temp;
-        int count = 0;
-        int maxNode = 1;
-        int level = 0;
-        int space = 1<<height;
-        printNSpace(space / 2);
-        while (!q.empty())
-        {
-            temp = q.front();
-            q.pop();
-            if (temp == NULL)
-            {
-                cout << " ";
-                q.push(NULL);
-                q.push(NULL);
-            }
-            else
-            {
-                cout << "ID: " << temp->table.id << " Result: " << temp->table.result << "\n";
-                q.push(temp->left);
-                q.push(temp->right);
-            }
-            printNSpace(space);
-            count++;
-            if (count == maxNode)
-            {
-                cout << endl;
-                count = 0;
-                maxNode *= 2;
-                level++;
-                space /= 2;
-                printNSpace(space / 2);
-            }
-            if (level == height)
-                return;
-        }
-    }
-    
     void Insert(Table table) {
-        root = InsertNode(root, table);
+        root = _insertNode(root, table);
     }
+
+    void Delete(Table table) {
+        root = _deleteNode(root, table);
+    }
+};
+
+void printBT(const std::string& prefix, const AVLNode* node, bool isLeft)
+{
+    if (node != nullptr)
+    {
+        std::cout << prefix;
+        std::cout << (isLeft ? "|-- (RIGHT:) " : "L-- (LEFT:) ");
+        // print the value of the node
+        std::cout << node->table.result << std::endl;
+        // enter the next tree level - left and right branch
+        printBT(prefix + (isLeft ? "|   " : "    "), node->right, true);
+        printBT(prefix + (isLeft ? "|   " : "    "), node->left, false);
+    }
+}
+
+void printBT(const AVLTree* tree)
+{
+    printBT("", tree->root, false);
 }
