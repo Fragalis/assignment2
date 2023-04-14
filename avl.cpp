@@ -80,10 +80,10 @@ private:
         if(!root) return root;
 
         // Traverse left tree if result < root->result
-        if(table.result < root->table.result) root->left = _deleteNode(root->left, table);
+        if(table.result < root->table.result || table.id != root->table.id) root->left = _deleteNode(root->left, table);
 
         // Traverse right tree if result > root->result
-        else if(table.result > root->table.result) root->right = _deleteNode(root->right, table);
+        if(table.result > root->table.result || table.id != root->table.id) root->right = _deleteNode(root->right, table);
 
         // Found Node to delete
         else {
@@ -127,21 +127,6 @@ private:
             return _rotateRight(root);   
         }
         return root;
-    }
-
-    // SEARCH id table based on result:
-    int _search(int result) {
-        AVLNode* traverse = root;
-
-        // Traverse tree, if found node -> return id
-        while(traverse != NULL) {
-            if(result == root->table.result) return traverse->table.id;
-            else if(result > root->table.result) traverse = traverse->right;
-            else traverse = traverse->left;
-        }
-        
-        // If here, so we can't find that result, return 0;
-        return 0;
     }
 
     void _clear(AVLNode *node) {
@@ -216,10 +201,6 @@ public:
             root = _deleteNode(root, table);
             --size;
         }
-    }
-
-    int GetTableID(int result) {
-        return _search(result);
     }
 
     void Clear() {

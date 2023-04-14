@@ -10,7 +10,7 @@ int main() {
     // CONSTRUCTOR
     for(int i = 0; i < SIZE; ++i) {
         Table table;
-        table.id = i;
+        table.id = (i*i + 16)%(SIZE*16) + 1;
         table.result = table_result[i];
         cout << "Add: "; table.Print(); cout << endl;
         avl_sample->InsertTable(table);
@@ -20,10 +20,10 @@ int main() {
     // DESTRUCTOR
     for(int i = 0; i < 1; ++i) {
         Table table;
-        table.id = 4;
+        table.id = 33;
         table.result = table_result[15];
-        cout << "Search: "; table.Print(); cout << endl;
-        avl_sample->GetTableID(table.result);
+        cout << "Delete: "; table.Print(); cout << endl;
+        avl_sample->DeleteTable(table);
     }
     avl_sample->PrintTree();
     avl_sample->~AVLTree();

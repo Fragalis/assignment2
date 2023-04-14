@@ -7,9 +7,15 @@ void simulate(string filename) {
 	// CHECK FOR VALID FILE INPUT
 	if(!input) return;
 	
-	// A VECTOR of PAIR <int,bool>
-	// in which 0 is always untouched (-1, false)
+	// A VECTOR of Result formed by Huffman Encoding
+	// in which 0 is always untouched (-1)
 	vector<int> RecordResult(MAXSIZE + 1, -1);
+
+	// A VECTOR of bool which locate the table id
+	// in which 0 is always untouched
+	// Set to true if table in HashTable Area
+	// Set to false if table in AVL Area
+	vector<bool> IsHash(MAXSIZE + 1, true);
 
 	// LOCATION 1: Hash-Table
 	HashTable Location_HashTable;
@@ -87,11 +93,13 @@ void simulate(string filename) {
 
 				if(customerResult%2 == 0 || Location_HashTable.IsFull()) { // IF Customer is located in AVL || Hash-Table Area is Full.
 					Location_AVL->InsertTable(newTable);
+					IsHash[customerID] = false;
 					cout << "AVL TREE" << endl;
 					Location_AVL->PrintTree();
 				}
 				else if(customerResult%2 == 1 || Location_AVL->IsFull()) { // IF Customer is located in Hash-Table || AVL Area is Full
 					Location_HashTable.AddTable(newTable, customerResult%3);
+					IsHash[customerID] = true;
 					cout << "HASH TABLE" << endl;
 					Location_HashTable.PrintTable();
 				}
@@ -125,17 +133,11 @@ void simulate(string filename) {
 			cout << number << endl;
 
 			if(number < 1) { // Delete all Hash-Table content
-				for(int i = 0; i < MAXSIZE; ++i) { 
-					/*
-					Traverse all position i possible (0 to MAXSIZE - 1):
-						If we found any position which is a table in HashTable
-							GetTableID() will return that table's id.
-						Else, if that position is not in HashTable (maybe in AVL)
-							GetTableID() will return 0, which in fact is always empty.
-					Therefore, RecordResult[RemoveTable(i)] will reset to -1
-					for every table found in HashTable Location.
-					 */
-					RecordResult[Location_HashTable.GetTableID(i)] = -1;
+				for(int i = 1; i <= MAXSIZE; ++i) {
+					// For every table which has id (i)
+					// If table is in HashTable Area (IsHash[i] = true)
+					// We reset RecordResult[i];
+					if(IsHash[i]) RecordResult[i] = -1;
 				}
 
 				// We resetted every table in RecordResult
@@ -144,26 +146,37 @@ void simulate(string filename) {
 			}
 
 			else if(number > MAXSIZE) { // Delete all AVL content
-				for(int i = 0; i < MAXSIZE; ++i) {
-					/*
-					Traverse all position i possible (0 to MAXSIZE - 1):
-						RecordResult[i] returns a 'Result', which we seek for its id
-						If 'Result' is a table contained in AVL
-							GetTableID() will return that table's id.
-						Else, if 'Result' is not a table in AVL (maybe in Hash)
-							GetTableID() will return 0, which in fact is always empty.
-					Therefore, RecordResult[RemoveTable(i)] will reset to -1
-					for every table found in AVL Location.
-					 */
-					RecordResult[Location_AVL->GetTableID(RecordResult[i])] = -1;
+				for(int i = i; i <= MAXSIZE; ++i) {
+					// For every table which has id (i)
+					// If table is in AVL Area (IsHash[i] = false)
+					// We reset RecordResult[i];
+					if(!IsHash[i]) RecordResult[i] = -1;
 				}
-				
+
 				// We resetted every table in RecordResult
 				// Now we Clear the Location
 				Location_AVL->Clear();
 			}
 			else { // Delete Specific Table
-				
+
+				// Empty Table Case
+				if(RecordResult[number] == -1) continue;
+
+				// We got a table to delete
+				else {
+					// The table we delete is in HashTable Area
+					if(IsHash[number]) {
+						Location_HashTable.RemoveTable(number);
+						RecordResult[number] = -1;
+					}
+					// The table we delete is in AVL Area
+					else {
+						Table delTable{(number, RecordResult[number])};
+						Location_AVL->DeleteTable(delTable);
+						RecordResult[number] = -1;
+						IsHash[number] = true;
+					}
+				}
 			}
 
 			Location_AVL->PrintTree();

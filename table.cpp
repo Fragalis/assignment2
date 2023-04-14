@@ -81,16 +81,11 @@ public:
         key[address].SetTable(table);
         ++size;
     }
-    
-    // Remove table at position, return id of that table
-    int GetTableID(int position) {
-        if(this->size == 0 || position < 0 || position >= MAXSIZE) throw "Out of Bounds";
-        return key[position].id;
-    }
 
-    void RemoveTable(Table table) {
+    // Remove table which has the id (id)
+    void RemoveTable(int id) {
         for(int i = 0; i < MAXSIZE; ++i) {
-            if(table.id == key[i].id && table.result == key[i].result) {
+            if(id == key[i].id) {
                 key[i].ResetTable();
                 return;
             }
