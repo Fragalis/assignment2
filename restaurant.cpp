@@ -2,6 +2,16 @@
 #include "huffman_code.cpp"
 #include "avl.cpp"
 
+// Always call when there is a REG
+void AddCustomer(const Table &customer, vector<int> &recordResult, vector<bool> &isHash,
+				 HashTable &Location_HashTable,
+				 AVLTree *&Location_AVL);
+
+// Call when removal is needed
+void RemoveCustomer(const Table &customer, vector<int> &recordResult, vector<bool> &isHash,
+				 HashTable &Location_HashTable, 
+				 AVLTree *&Location_AVL);
+
 void simulate(string filename) {
 	ifstream input("test.txt");
 	// CHECK FOR VALID FILE INPUT
@@ -23,10 +33,22 @@ void simulate(string filename) {
 	// LOCATION 2: AVL Tree
 	AVLTree *Location_AVL = new AVLTree();
 
+	// A Queue to store customer id, refer to OPT = 1
+	queue<int> FIFO_Queue;
+
+	// Something to be implemented
+	// Store customer id and recent activities, refer to OPT = 2
+
+	// A Min-Heap to store customer id and frequency, refer to OPT = 3
+	// TO BE IMPLEMENTED, REFER TO "min-heap.cpp"
+
 	// INITIAL COMMAND LINE INPUT
 	string line = "";
 	while(getline(input, line)) {
-		// cout << line << endl;
+
+		// Testing input
+		cout << line << endl;
+
 		int index = 0;
 		string keyword = "";
 
@@ -38,6 +60,7 @@ void simulate(string filename) {
 
 		if(keyword == "REG") {
 			bool isFull = false;
+			bool isOrder = false;
 			string name = "";
 			// READ NAME
 			for(index; index < line.length() and line[index] != ' '; ++index) {
@@ -58,54 +81,84 @@ void simulate(string filename) {
 			// HuffmanEncoding(string name, bool caseSensitive)
 			int customerResult = HuffmanEncoding(name, 0);
 
-			customerResult = customerResult + rand()%2; // Generating equal odd-even prob
+			// customerResult = customerResult + rand()%2; // Generating equal odd-even prob
 			// cout << customerResult << endl;
 
 			// If customerResult % MAXSIZE = 0 -> set ID to MAXSIZE
 			int customerID = (customerResult % MAXSIZE)? customerResult % MAXSIZE : MAXSIZE;
 
-			// We traverse the table vector to find empty table
-			while((customerID <= 2 * MAXSIZE) && RecordResult[(customerID - 1)%MAXSIZE + 1] != -1) {
-				++customerID;
-			}
-			
-			// If there's no empty table
-			if(customerID > 2 * MAXSIZE) {
-				isFull = true;
-			}
-			// Else there's at least 1 empty table
-			else {
-				customerID = (customerID - 1)%MAXSIZE + 1;
-				RecordResult[customerID] = customerResult;
-				// cout << customerID << endl;
+			// If we were to order food
+			// The code must be here to check 
+			// if REG <NAME> is actually an order, not a register command
+
+			// If Result Match, we need to check if name matches
+			for(int id = 0; id <= MAXSIZE; ++id) {
+				if(RecordResult[id] == customerResult) {
+					// If the name matches
+					int result = customerResult;
+					if(IsHash[id]) {
+						if(Location_HashTable.FindName(id, result) == name) isOrder = true;
+					}
+					else {
+						if(Location_AVL->FindName(id, result) == name) isOrder = true;
+					}
+				}
 			}
 
 			// EXECUTING REG COMMAND
-			
-			// Remove a customer if isFull
-			if(isFull) {
-				// TO BE IMPLEMENTED
-				cout << "FULL SIZE" << endl;
+
+			// If it's not an order
+			// We traverse the table vector to find empty table
+			if(!isOrder) {
+				while((customerID <= 2 * MAXSIZE) && RecordResult[(customerID - 1)%MAXSIZE + 1] != -1) {
+					++customerID;
+				}
+				
+				// If there's no empty table
+				if(customerID > 2 * MAXSIZE) {
+					isFull = true;
+				}
+				// Else there's at least 1 empty table
+				else {
+					customerID = (customerID - 1)%MAXSIZE + 1;
+					// cout << customerID << endl;
+				}
+
+				// Create new table representing customer
+				Table customer;
+				customer.SetTable(customerID, customerResult, name);
+				// Remove a customer if isFull
+				if(isFull) {
+					// Calculating OPT value - Refer to Assignment 2 Spec
+					int OPT = customerResult%3;
+
+					// Create Table for removal
+					Table removal;
+
+					// If OPT = 0 -> FIFO (a queue is enough)
+					if(OPT == 0) {
+						int removalID = FIFO_Queue.front();
+						removal.SetTable(removalID, RecordResult[removalID], "");
+						FIFO_Queue.pop();
+					}
+					
+					// Call RemoveCustomer(param) method
+					RemoveCustomer(removal, RecordResult, IsHash, Location_HashTable, Location_AVL);
+					// cout << "Remove Success" << endl;
+				}
+				
+				// After removal methods, we are now free to add a new customer
+				// Call AddCustomer(param) methods
+				AddCustomer(customer, RecordResult, IsHash, Location_HashTable, Location_AVL);
+
+				// Add customer to FIFO queue
+				FIFO_Queue.push(customerID);
 			}
-			// Add new customer if not full
-			if(!isFull) {
-				Table newTable;
-				newTable.SetTable(customerID, customerResult);
 
-				if(customerResult%2 == 0 || Location_HashTable.IsFull()) { // IF Customer is located in AVL || Hash-Table Area is Full.
-					Location_AVL->InsertTable(newTable);
-					IsHash[customerID] = false;
-					cout << "AVL TREE" << endl;
-					Location_AVL->PrintTree();
-				}
-				else if(customerResult%2 == 1 || Location_AVL->IsFull()) { // IF Customer is located in Hash-Table || AVL Area is Full
-					Location_HashTable.AddTable(newTable, customerResult%3);
-					IsHash[customerID] = true;
-					cout << "HASH TABLE" << endl;
-					Location_HashTable.PrintTable();
-				}
-
-				// We will push current table into customer query for removal
+			// If it's an order -> update (OPT = 1) and Min-Heap (OPT = 2);
+			else {
+				// TO BE IMPLEMENTED
+				cout << "IS ORDER" << endl;
 			}
 		}
 
@@ -131,7 +184,6 @@ void simulate(string filename) {
 			// INVALID NUMBER (No space between, no space at end, no non-numeric character) -> to next line
 			if(index < line.length()) continue;
 			int number = stoi(temp) * (isNegative? -1 : 1); // If negative -> multiply it with -1
-			cout << number << endl;
 
 			if(number < 1) { // Delete all Hash-Table content
 				for(int i = 1; i <= MAXSIZE; ++i) {
@@ -160,25 +212,13 @@ void simulate(string filename) {
 			}
 			else { // Delete Specific Table
 
-				// Empty Table Case
+				// If table is empty -> continue;
 				if(RecordResult[number] == -1) continue;
 
-				// We got a table to delete
-				else {
-					// The table we delete is in HashTable Area
-					if(IsHash[number]) {
-						Location_HashTable.RemoveTable(number);
-						RecordResult[number] = -1;
-					}
-					// The table we delete is in AVL Area
-					else {
-						Table delTable;
-						delTable.SetTable(number, RecordResult[number]);
-						Location_AVL->DeleteTable(delTable);
-						RecordResult[number] = -1;
-						IsHash[number] = true;
-					}
-				}
+				// If not continue, call the RemoveCustomer(param) method
+				Table customer;
+				customer.SetTable(number, RecordResult[number], "");
+				RemoveCustomer(customer, RecordResult, IsHash, Location_HashTable, Location_AVL);
 			}
 		}
 
@@ -200,4 +240,54 @@ void simulate(string filename) {
 	}
 
 	return;
+}
+
+void AddCustomer(const Table &customer, vector<int> &recordResult, vector<bool> &isHash,
+				 HashTable &Location_HashTable, 
+				 AVLTree *&Location_AVL) {
+
+	// Take elements from customer
+	int customerResult = customer.result;
+	int customerID = customer.id;
+
+	// Record customerResult
+	recordResult[customerID] = customerResult;
+
+	// IF Customer is located in AVL || Hash-Table Area is Full.
+	if(customerResult%2 == 0 || Location_HashTable.IsFull()) {
+		Location_AVL->InsertTable(customer);
+		isHash[customerID] = false;
+		cout << "AVL TREE" << endl;
+		Location_AVL->PrintTree();
+	}
+
+	// IF Customer is located in Hash-Table || AVL Area is Full
+	else if(customerResult%2 == 1 || Location_AVL->IsFull()) {
+		Location_HashTable.AddTable(customer, customerResult%3);
+		isHash[customerID] = true;
+		cout << "HASH TABLE" << endl;
+		Location_HashTable.PrintTable();
+	}
+	return;
+}
+
+void RemoveCustomer(const Table &customer, vector<int> &recordResult, vector<bool> &isHash,
+				 HashTable &Location_HashTable, 
+				 AVLTree *&Location_AVL) {
+	
+	// Take elements from customer
+	int customerResult = customer.result;
+	int customerID = customer.id;
+
+	// The table we delete is in HashTable Area
+	if(isHash[customerID]) {
+		Location_HashTable.RemoveTable(customerID);
+		recordResult[customerID] = -1;
+	}
+	// The table we delete is in AVL Area
+	else {
+		Location_AVL->DeleteTable(customer);
+		recordResult[customerID] = -1;
+		isHash[customerID] = true;
+	}
 }

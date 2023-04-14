@@ -137,7 +137,16 @@ private:
         node = NULL;
     }
 
-    void _printTree(const std::string& prefix, const AVLNode* node, bool isLeft)
+    string _findName(AVLNode *node, int &id, int &result) {
+        if(!node) return "";
+        Table curr = node->table;
+        if(curr.Equal(id, result)) return curr.name;
+        if(curr.result > result || curr.id != id) return _findName(node->right, id, result);
+        if(curr.result > result || curr.id != id) return _findName(node->left, id, result);
+        return "";
+    }
+
+    void _printTree(const std::string& prefix, AVLNode* node, bool isLeft)
     {
         if(size == 0) cout << "NO ELEMENT" << endl;
         if (node != nullptr)
@@ -145,7 +154,7 @@ private:
             cout << prefix;
             cout << (isLeft ? "|------ (RIGHT:) " : "L------ (LEFT:) ");
             // print the value of the node
-            cout << "ID: " << node->table.id << " DATA: " << node->table.result << endl;
+            node->table.Print(); cout << endl;
             // enter the next tree level - left and right branch
             _printTree(prefix + (isLeft ? "|       " : "        "), node->right, true);
             _printTree(prefix + (isLeft ? "|       " : "        "), node->left, false);
@@ -186,7 +195,7 @@ public:
     }
 
     bool IsFull() {
-        return (size >= MAXSIZE);
+        return (size >= (MAXSIZE>>1));
     }
 
     void InsertTable(Table table) {
@@ -201,6 +210,10 @@ public:
             root = _deleteNode(root, table);
             --size;
         }
+    }
+
+    string FindName(int id, int result) {
+        return _findName(this->root, id, result);
     }
 
     void Clear() {

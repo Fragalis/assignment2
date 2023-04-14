@@ -3,36 +3,48 @@
 class Table {
 public:
     int id, result;
-    Table(int id = 0, int result = 0) {
+    string name;
+    Table(int id = 0, int result = 0, string name = "") {
         this->id = id;
         this->result = result;
+        this->name = name;
     }
     ~Table() {
-        id = 0;
-        result = 0;
+        ResetTable();
     }
 
     void SetTable(const Table &table) {
         this->id = table.id;
         this->result = table.result;
+        this->name = table.name;
     }
 
-    void SetTable(const int id, const int result) {
+    void SetTable(const int &id, const int &result, const string &name) {
         this->id = id;
         this->result = result;
+        this->name = name;
     }
 
     void ResetTable() { 
         id = 0;
         result = 0;
+        name = "";
     }
 
     bool IsEmpty() {
         return (id == 0);
     }
 
+    bool Equal(const int &id, const int &result) {
+        return (this->id == id) && (this->result == result);
+    }
+
+    bool Equal(const int &id, const int &result, const string &name) {
+        return (this->id == id) && (this->result == result) && (this->name == name);
+    }
+
     void Print() {
-        cout << "ID: " << id << " DATA: " << result;
+        cout << "ID: " << id << " DATA: " << result << " NAME: " << name;
     }
 };
 
@@ -50,16 +62,25 @@ private:
         return (index%MAXSIZE);
     }
 
+    string _findName(int id, int result) {
+        for(int i = 0; i < MAXSIZE; ++i) {
+            if(key[i].Equal(id, result)) return key[i].name;
+        }
+        return "";
+    }
+
     void _clear() {
         for(int i = 0; i < MAXSIZE; ++i) key[i].ResetTable();
     }
 
     void _print() {
         if(size == 0) cout << "NO ELEMENT" << endl;
-        for(int i = 0; i < size; ++i) {
-            cout << "Address: " << i << "\t";
-            key[i].Print();
-            cout << endl;
+        for(int i = 0; i < MAXSIZE; ++i) {
+            if(!key[i].IsEmpty()) {
+                cout << "Address: " << i << "\t";
+                key[i].Print();
+                cout << endl;
+            }          
         }
     }
 public:
@@ -77,7 +98,7 @@ public:
     }
 
     bool IsFull() {
-        return (this->size >= MAXSIZE);
+        return (this->size >= (MAXSIZE>>1));
     }
 
     void AddTable(Table table, int address) {
@@ -95,6 +116,10 @@ public:
                 return;
             }
         }
+    }
+
+    string FindName(int id, int result) {
+        return _findName(id, result);
     }
 
     void Clear() {
