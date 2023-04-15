@@ -34,10 +34,12 @@ void simulate(string filename) {
 	AVLTree *Location_AVL = new AVLTree();
 
 	// A Queue to store customer id, refer to OPT = 1
+	// First customer in is always in .front()
 	queue<int> FIFO_Queue;
 
-	// Something to be implemented
-	// Store customer id and recent activities, refer to OPT = 2
+	// A List to store customer id, refer to OPT = 2
+	// Last customer to order is always in .front()
+	list<int> LRCO_List;
 
 	// A Min-Heap to store customer id and frequency, refer to OPT = 3
 	// TO BE IMPLEMENTED, REFER TO "min-heap.cpp"
@@ -59,7 +61,7 @@ void simulate(string filename) {
 		++index;
 
 		if(keyword == "REG") {
-			bool isFull = false;
+			bool isFull = Location_AVL->IsFull() && Location_HashTable.IsFull();
 			bool isOrder = false;
 			string name = "";
 			// READ NAME
@@ -75,25 +77,23 @@ void simulate(string filename) {
 			// INVALID NAME (No space between, no space at end, no non-alphabet character) -> to next line
 			if(index < line.length()) continue;
 
-			// name = "aabbcba";
-			// cout << name << endl;
-
 			// HuffmanEncoding(string name, bool caseSensitive)
 			int customerResult = HuffmanEncoding(name, 0);
 
-			// customerResult = customerResult + rand()%2; // Generating equal odd-even prob
-			// cout << customerResult << endl;
-
 			// If customerResult % MAXSIZE = 0 -> set ID to MAXSIZE
 			int customerID = (customerResult % MAXSIZE)? customerResult % MAXSIZE : MAXSIZE;
-
-			// If we were to order food
-			// The code must be here to check 
-			// if REG <NAME> is actually an order, not a register command
+			
+			/*
+				If we were to order food
+				The code must be here to check 
+				if REG <NAME> is actually an order, not a register command
+			 */
 
 			// If Result Match, we need to check if name matches
-			for(int id = 0; id <= MAXSIZE; ++id) {
-				if(RecordResult[id] == customerResult) {
+			for(int id = customerID; id <= customerID + MAXSIZE; ++id) {
+
+				// If result matches, there's a chance that the name matches
+				if(RecordResult[(id - 1) % MAXSIZE + 1] == customerResult) {
 					// If the name matches
 					int result = customerResult;
 					if(IsHash[id]) {
@@ -103,6 +103,13 @@ void simulate(string filename) {
 						if(Location_AVL->FindName(id, result) == name) isOrder = true;
 					}
 				}
+				
+				// If it's an order
+				if(isOrder) {
+					// Reset customerID to id
+					customerID = (id - 1) % MAXSIZE + 1;
+					break;
+				}
 			}
 
 			// EXECUTING REG COMMAND
@@ -110,28 +117,12 @@ void simulate(string filename) {
 			// If it's not an order
 			// We traverse the table vector to find empty table
 			if(!isOrder) {
-				while((customerID <= 2 * MAXSIZE) && RecordResult[(customerID - 1)%MAXSIZE + 1] != -1) {
-					++customerID;
-				}
 				
-				// If there's no empty table
-				if(customerID > 2 * MAXSIZE) {
-					isFull = true;
-				}
-				// Else there's at least 1 empty table
-				else {
-					customerID = (customerID - 1)%MAXSIZE + 1;
-					// cout << customerID << endl;
-				}
-
-				// Create new table representing customer
-				Table customer;
-				customer.SetTable(customerID, customerResult, name);
-				// Remove a customer if isFull
+				// If both the locations are full
 				if(isFull) {
 					// Calculating OPT value - Refer to Assignment 2 Spec
 					int OPT = customerResult%3;
-
+					cout << "OPT: " << OPT << endl;
 					// Create Table for removal
 					Table removal;
 
@@ -142,22 +133,52 @@ void simulate(string filename) {
 						FIFO_Queue.pop();
 					}
 					
+					// If OPT = 1 -> LRCO (a list should be enough)
+					if(OPT == 1) {
+						int removalID = LRCO_List.front();
+						removal.SetTable(removalID, RecordResult[removalID], "");
+						LRCO_List.pop_front();
+					}
+
+					if(OPT == 2) continue;
 					// Call RemoveCustomer(param) method
 					RemoveCustomer(removal, RecordResult, IsHash, Location_HashTable, Location_AVL);
-					// cout << "Remove Success" << endl;
 				}
 				
-				// After removal methods, we are now free to add a new customer
+				// REMOVAL SUCCESS
+
+				while((customerID <= 2 * MAXSIZE) && RecordResult[(customerID - 1)%MAXSIZE + 1] != -1) {
+					++customerID;
+				}
+				customerID = (customerID - 1)%MAXSIZE + 1;
+
+				// Create new table representing customer
+				Table customer;
+				customer.SetTable(customerID, customerResult, name);
+
 				// Call AddCustomer(param) methods
 				AddCustomer(customer, RecordResult, IsHash, Location_HashTable, Location_AVL);
 
 				// Add customer to FIFO queue
 				FIFO_Queue.push(customerID);
+
+				// Add customer to LRCO list
+				LRCO_List.push_back(customerID);
 			}
 
 			// If it's an order -> update (OPT = 1) and Min-Heap (OPT = 2);
 			else {
 				// TO BE IMPLEMENTED
+				// If the customer order -> push that customerID to back
+				for(auto it = LRCO_List.begin(); it != LRCO_List.end(); ++it) {
+					cout << *it << " ";
+				} cout << endl;
+				LRCO_List.remove(customerID);
+				LRCO_List.push_back(customerID);
+				for(auto it = LRCO_List.begin(); it != LRCO_List.end(); ++it) {
+					cout << *it << " ";
+				} cout << endl;
+				// If the customer order -> HEAP
 				cout << "IS ORDER" << endl;
 			}
 		}
@@ -199,7 +220,7 @@ void simulate(string filename) {
 			}
 
 			else if(number > MAXSIZE) { // Delete all AVL content
-				for(int i = i; i <= MAXSIZE; ++i) {
+				for(int i = 1; i <= MAXSIZE; ++i) {
 					// For every table which has id (i)
 					// If table is in AVL Area (IsHash[i] = false)
 					// We reset RecordResult[i];
@@ -238,7 +259,8 @@ void simulate(string filename) {
 			continue;
 		}
 	}
-
+	Location_AVL->~AVLTree();
+	Location_HashTable.~HashTable();
 	return;
 }
 
@@ -257,16 +279,16 @@ void AddCustomer(const Table &customer, vector<int> &recordResult, vector<bool> 
 	if(customerResult%2 == 0 || Location_HashTable.IsFull()) {
 		Location_AVL->InsertTable(customer);
 		isHash[customerID] = false;
-		cout << "AVL TREE" << endl;
-		Location_AVL->PrintTree();
+		// cout << "AVL TREE" << endl;
+		// Location_AVL->PrintTree();
 	}
 
 	// IF Customer is located in Hash-Table || AVL Area is Full
 	else if(customerResult%2 == 1 || Location_AVL->IsFull()) {
 		Location_HashTable.AddTable(customer, customerResult%3);
 		isHash[customerID] = true;
-		cout << "HASH TABLE" << endl;
-		Location_HashTable.PrintTable();
+		// cout << "HASH TABLE" << endl;
+		// Location_HashTable.PrintTable();
 	}
 	return;
 }

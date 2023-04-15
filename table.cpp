@@ -50,7 +50,8 @@ public:
 
 class HashTable {
 private:
-    Table key[MAXSIZE];
+    const int capacity = MAXSIZE>>1;
+    Table key[MAXSIZE>>1];
     int size;
 
     // ASSUME HASHTABLE IS NEVER FULL
@@ -58,24 +59,24 @@ private:
         int index = address;
 
         // Traverse the HASHMAP for empty table
-        while(key[index%MAXSIZE].IsEmpty() == false) ++index;
-        return (index%MAXSIZE);
+        while(key[index%capacity].IsEmpty() == false) ++index;
+        return (index%capacity);
     }
 
     string _findName(int id, int result) {
-        for(int i = 0; i < MAXSIZE; ++i) {
+        for(int i = 0; i < capacity; ++i) {
             if(key[i].Equal(id, result)) return key[i].name;
         }
         return "";
     }
 
     void _clear() {
-        for(int i = 0; i < MAXSIZE; ++i) key[i].ResetTable();
+        for(int i = 0; i < capacity; ++i) key[i].ResetTable();
     }
 
     void _print() {
         if(size == 0) cout << "NO ELEMENT" << endl;
-        for(int i = 0; i < MAXSIZE; ++i) {
+        for(int i = 0; i < capacity; ++i) {
             if(!key[i].IsEmpty()) {
                 cout << "Address: " << i << "\t";
                 key[i].Print();
@@ -86,7 +87,7 @@ private:
 public:
     HashTable() {
         this->size = 0;
-        for(int i = 0; i < MAXSIZE; ++i) key[i].ResetTable();
+        for(int i = 0; i < capacity; ++i) key[i].ResetTable();
     }
 
     ~HashTable() {
@@ -98,11 +99,11 @@ public:
     }
 
     bool IsFull() {
-        return (this->size >= (MAXSIZE>>1));
+        return (this->size >= capacity);
     }
 
     void AddTable(Table table, int address) {
-        if(IsFull() || address < 0 || address >= MAXSIZE) return;
+        if(IsFull() || address < 0 || address >= capacity) return;
         if(key[address].IsEmpty() == false) address = _findAddress(address);
         key[address].SetTable(table);
         ++size;
@@ -110,7 +111,7 @@ public:
 
     // Remove table which has the id (id)
     void RemoveTable(int id) {
-        for(int i = 0; i < MAXSIZE; ++i) {
+        for(int i = 0; i < capacity; ++i) {
             if(id == key[i].id) {
                 key[i].ResetTable();
                 return;
@@ -134,7 +135,7 @@ public:
     }
 
     void Print_Command() {
-        for(int i = 0; i < MAXSIZE; ++i) {
+        for(int i = 0; i < capacity; ++i) {
             if(!key[i].IsEmpty()) cout << key[i].id << "-" << key[i].result << "\n";
         }
     }

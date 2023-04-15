@@ -20,6 +20,7 @@ public:
 
 class AVLTree {
 private:
+    const int capacity = MAXSIZE>>1;
     AVLNode *root;
     int size;
     
@@ -195,11 +196,11 @@ public:
     }
 
     bool IsFull() {
-        return (size >= (MAXSIZE>>1));
+        return (this->size >= capacity);
     }
 
     void InsertTable(Table table) {
-        if(size < MAXSIZE) {
+        if(size < capacity) {
             root = _insertNode(root, table);
             ++size;
         }
