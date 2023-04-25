@@ -98,6 +98,14 @@ public:
         return this->size;
     }
 
+    int GetCapacity() {
+        return this->capacity;
+    }
+
+    Table GetTable(int address) {
+        return key[address];
+    }
+
     bool IsFull() {
         return (this->size >= capacity);
     }
@@ -132,11 +140,5 @@ public:
     void PrintTable() {
         _print();
         cout << endl;
-    }
-
-    void Print_Command() {
-        for(int i = 0; i < capacity; ++i) {
-            if(!key[i].IsEmpty()) cout << key[i].id << "-" << key[i].result << "\n";
-        }
     }
 };

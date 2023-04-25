@@ -86,10 +86,11 @@ public:
 
 void Delete(HuffNode *ptr) {
     if(!ptr) return;
-    Delete(ptr->GetLeftPtr());
-    Delete(ptr->GetRightPtr());
-    // cout << "DELETE " << ptr->GetValue() << " : " << ptr->GetWeight() << endl;  
+    if(ptr->GetLeftPtr()) Delete(ptr->GetLeftPtr());
+    if(ptr->GetRightPtr()) Delete(ptr->GetRightPtr());
+    // cout << "DELETE " << ptr->GetValue() << " : " << ptr->GetWeight() << endl; 
     delete ptr;
+    ptr = NULL; 
 }
 
 HuffNode *GenerateHuffTree(priority_queue<HuffNode*, vector<HuffNode*>, Compare> pq) {

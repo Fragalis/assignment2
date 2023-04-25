@@ -1,6 +1,7 @@
 #include "main.h"
 #include "huffman_code.cpp"
 #include "avl.cpp"
+#include "minheap.cpp"
 
 // Always call when there is a REG
 void AddCustomer(const Table &customer, vector<int> &recordResult, vector<bool> &isHash,
@@ -11,6 +12,10 @@ void AddCustomer(const Table &customer, vector<int> &recordResult, vector<bool> 
 void RemoveCustomer(const Table &customer, vector<int> &recordResult, vector<bool> &isHash,
 				 HashTable &Location_HashTable, 
 				 AVLTree *&Location_AVL);
+
+void PrintHT(HashTable &Location_HashTable, MinHeap &LFCO_Heap);
+void PrintAVL(AVLTree *&Location_AVL, MinHeap &LFCO_Heap);
+void PrintMH(MinHeap &LFCO_Heap);
 
 void simulate(string filename) {
 	ifstream input("test.txt");
@@ -35,21 +40,21 @@ void simulate(string filename) {
 
 	// A Queue to store customer id, refer to OPT = 1
 	// First customer in is always in .front()
-	queue<int> FIFO_Queue;
+	list<int> FIFO_Queue;
 
 	// A List to store customer id, refer to OPT = 2
 	// Last customer to order is always in .front()
 	list<int> LRCO_List;
 
 	// A Min-Heap to store customer id and frequency, refer to OPT = 3
-	// TO BE IMPLEMENTED, REFER TO "min-heap.cpp"
+	MinHeap LFCO_Heap;
 
 	// INITIAL COMMAND LINE INPUT
 	string line = "";
 	while(getline(input, line)) {
 
 		// Testing input
-		cout << line << endl;
+		// cout << line << endl;
 
 		int index = 0;
 		string keyword = "";
@@ -76,13 +81,9 @@ void simulate(string filename) {
 
 			// INVALID NAME (No space between, no space at end, no non-alphabet character) -> to next line
 			if(index < line.length()) continue;
-
 			// HuffmanEncoding(string name, bool caseSensitive)
-			int customerResult = HuffmanEncoding(name, 0);
-
-			// If customerResult % MAXSIZE = 0 -> set ID to MAXSIZE
-			int customerID = (customerResult % MAXSIZE)? customerResult % MAXSIZE : MAXSIZE;
-			
+			int customerResult = (name.length() == 1)? 1 : HuffmanEncoding(name, 1);
+			int customerID = customerResult%MAXSIZE + 1;
 			/*
 				If we were to order food
 				The code must be here to check 
@@ -122,26 +123,30 @@ void simulate(string filename) {
 				if(isFull) {
 					// Calculating OPT value - Refer to Assignment 2 Spec
 					int OPT = customerResult%3;
-					cout << "OPT: " << OPT << endl;
+					// cout << "OPT: " << OPT << endl;
 					// Create Table for removal
 					Table removal;
-
+					int removalID = -1;
 					// If OPT = 0 -> FIFO (a queue is enough)
 					if(OPT == 0) {
-						int removalID = FIFO_Queue.front();
-						removal.SetTable(removalID, RecordResult[removalID], "");
-						FIFO_Queue.pop();
+						removalID = FIFO_Queue.front();
+						FIFO_Queue.pop_front();
 					}
 					
 					// If OPT = 1 -> LRCO (a list should be enough)
 					if(OPT == 1) {
-						int removalID = LRCO_List.front();
-						removal.SetTable(removalID, RecordResult[removalID], "");
+						removalID = LRCO_List.front();
 						LRCO_List.pop_front();
 					}
 
-					if(OPT == 2) continue;
+					// If OPT = 2 -> LFCO (a heap will be enough)
+					// Ignore the customer's arrival time for now
+					if(OPT == 2) {
+						removalID = LFCO_Heap.Front();
+						LFCO_Heap.Pop(removalID);
+					}
 					// Call RemoveCustomer(param) method
+					removal.SetTable(removalID, RecordResult[removalID], "");
 					RemoveCustomer(removal, RecordResult, IsHash, Location_HashTable, Location_AVL);
 				}
 				
@@ -160,26 +165,24 @@ void simulate(string filename) {
 				AddCustomer(customer, RecordResult, IsHash, Location_HashTable, Location_AVL);
 
 				// Add customer to FIFO queue
-				FIFO_Queue.push(customerID);
+				FIFO_Queue.push_back(customerID);
 
 				// Add customer to LRCO list
 				LRCO_List.push_back(customerID);
+
+				// Add customer to LFCO heap
+				LFCO_Heap.Push(customerID);
 			}
 
 			// If it's an order -> update (OPT = 1) and Min-Heap (OPT = 2);
 			else {
-				// TO BE IMPLEMENTED
 				// If the customer order -> push that customerID to back
-				for(auto it = LRCO_List.begin(); it != LRCO_List.end(); ++it) {
-					cout << *it << " ";
-				} cout << endl;
 				LRCO_List.remove(customerID);
 				LRCO_List.push_back(customerID);
-				for(auto it = LRCO_List.begin(); it != LRCO_List.end(); ++it) {
-					cout << *it << " ";
-				} cout << endl;
-				// If the customer order -> HEAP
-				cout << "IS ORDER" << endl;
+
+				// If the customer order -> use that Push(id) method
+				LFCO_Heap.Push(customerID);
+				LFCO_Heap.Print_Command();
 			}
 		}
 
@@ -207,32 +210,49 @@ void simulate(string filename) {
 			int number = stoi(temp) * (isNegative? -1 : 1); // If negative -> multiply it with -1
 
 			if(number < 1) { // Delete all Hash-Table content
-				for(int i = 1; i <= MAXSIZE; ++i) {
+				for(auto it = FIFO_Queue.begin(); it != FIFO_Queue.end(); ++it) {
 					// For every table which has id (i)
 					// If table is in HashTable Area (IsHash[i] = true)
-					// We reset RecordResult[i];
-					if(IsHash[i]) RecordResult[i] = -1;
+					// We reset all the query (FIFO) (LRCO) (LFCO) and RecordResult;
+					if(IsHash[*it]) {
+						// cout << *it << endl;
+						int id = *it;
+						RecordResult[id] = -1;
+						LRCO_List.remove(id);
+						LFCO_Heap.Pop(id);
+						auto newIt = --it;
+						FIFO_Queue.remove(id);
+						it = newIt;
+					}
 				}
 
-				// We resetted every table in RecordResult
+				// We resetted everything
 				// Now we Clear the Location
 				Location_HashTable.Clear();
 			}
 
 			else if(number > MAXSIZE) { // Delete all AVL content
-				for(int i = 1; i <= MAXSIZE; ++i) {
+				for(auto it = FIFO_Queue.begin(); it != FIFO_Queue.end(); ++it) {
 					// For every table which has id (i)
 					// If table is in AVL Area (IsHash[i] = false)
-					// We reset RecordResult[i];
-					if(!IsHash[i]) RecordResult[i] = -1;
+					// We reset all the query (FIFO) (LRCO) (LFCO) and RecordResult;
+					if(!IsHash[*it]) {
+						cout << *it << endl;
+						int id = *it;
+						RecordResult[id] = -1;
+						LRCO_List.remove(id);
+						LFCO_Heap.Pop(id);
+						auto newIt = --it;
+						FIFO_Queue.remove(id);
+						it = newIt;
+					}
 				}
 
-				// We resetted every table in RecordResult
+				// We resetted everything
 				// Now we Clear the Location
 				Location_AVL->Clear();
 			}
 			else { // Delete Specific Table
-
 				// If table is empty -> continue;
 				if(RecordResult[number] == -1) continue;
 
@@ -240,18 +260,21 @@ void simulate(string filename) {
 				Table customer;
 				customer.SetTable(number, RecordResult[number], "");
 				RemoveCustomer(customer, RecordResult, IsHash, Location_HashTable, Location_AVL);
+				FIFO_Queue.remove(customer.id);
+				LFCO_Heap.Pop(customer.id);
+				LRCO_List.remove(customer.id);
 			}
 		}
 
 		else if(keyword == "PrintHT") {
-			Location_HashTable.Print_Command();
+			PrintHT(Location_HashTable, LFCO_Heap);
 		}
 
 		else if(keyword == "PrintAVL") {
-			Location_AVL->Print_Command();
+			PrintAVL(Location_AVL, LFCO_Heap);
 		}
 		else if(keyword == "PrintMH") {
-			// TO BE IMPLEMENTED
+			PrintMH(LFCO_Heap);
 		}
 
 		// INVALID KEYWORD
@@ -261,6 +284,7 @@ void simulate(string filename) {
 	}
 	Location_AVL->~AVLTree();
 	Location_HashTable.~HashTable();
+	LFCO_Heap.~MinHeap();
 	return;
 }
 
@@ -285,7 +309,7 @@ void AddCustomer(const Table &customer, vector<int> &recordResult, vector<bool> 
 
 	// IF Customer is located in Hash-Table || AVL Area is Full
 	else if(customerResult%2 == 1 || Location_AVL->IsFull()) {
-		Location_HashTable.AddTable(customer, customerResult%3);
+		Location_HashTable.AddTable(customer, customerResult%(MAXSIZE>>1));
 		isHash[customerID] = true;
 		// cout << "HASH TABLE" << endl;
 		// Location_HashTable.PrintTable();
@@ -312,4 +336,33 @@ void RemoveCustomer(const Table &customer, vector<int> &recordResult, vector<boo
 		recordResult[customerID] = -1;
 		isHash[customerID] = true;
 	}
+}
+
+void PrintHT(HashTable &Location_HashTable, MinHeap &LFCO_Heap) {
+	for(int i = 0; i < Location_HashTable.GetCapacity(); ++i) {
+		Table table = Location_HashTable.GetTable(i);
+        if(table.IsEmpty()) continue; // If empty, continue
+		int orderCount = LFCO_Heap.GetOrder(table.id); // NUM
+		// ID-RESULT-NUM
+		cout << table.id << "-" << table.result << "-" << orderCount << "\n";
+    }
+}
+
+void PrintAVL(AVLTree *&Location_AVL, MinHeap &LFCO_Heap) {
+	queue<AVLNode*> q;
+	q.push(Location_AVL->GetRoot());
+
+	while(!q.empty()) {
+		AVLNode *curr = q.front();
+		q.pop();
+		if(curr->left) q.push(curr->left);
+		if(curr->right) q.push(curr->right);
+		// ID-RESULT-NUM
+		int orderCount = LFCO_Heap.GetOrder(curr->table.id); // NUM
+		cout << curr->table.id << "-" << curr->table.result << "-" << orderCount << "\n";
+	}
+}
+
+void PrintMH(MinHeap &LFCO_Heap) {
+	LFCO_Heap.Print_Command();
 }

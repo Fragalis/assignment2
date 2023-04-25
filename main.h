@@ -4,6 +4,6 @@
 #include <string>
 
 using namespace std;
-#define MAXSIZE 10
+#define MAXSIZE 20
 
 #endif

@@ -15,27 +15,7 @@ REG sgfuigweibjaskdfbjksadf
 REG iwehruihqwUIAGSIDiernbsandfb
 REG Jhnuigfifbajasbdfhjbasdhjf
 REG uewhqruihqiuwerhnbdasnbfnmasd
-CLE 3
-CLE 20915
-REG ukajsdfjkasbndbmnFJKHJKsdbfsabdf
-REG kjasdfjksbDFFDFFfdjksabfdjkasdf
-CLE 0
-REG kjasdbjksbDFFDFFfdjksabfdjkasdf
-REG skjafdbasfnmFFFFsaddnfdf
-CLE 208115
-REG Jnuigfibhjasbdfhjbasdhjf
-REG Jnuigfifbahjasbdfhjbasdhjf
-CLE 0
-REG sfigweibjaskdfbjksadf
-REG iwhuihqwUIAGSIDiernbsandfb
-REG uewhruihqiuwerhnbdasnbfnmasd
-REG ukajhdfjkasbndbmnFJKHJKsdbfsabdf
-REG kjasdbjksbDFFDFFfdjksabfdjkasdf
-REG kjasdbfksbDFFDFFfdjksabfdjkasdf
-REG skjafdbnmFFFFsaddnfdf
-REG Jhnufbajasbdfhjbasdhjf
-REG hnuigffbahjasbdfhjbasdhjf
-REG sfuigwjaskdfbjksadf
+CLE 15
 PrintHT
 PrintAVL
 PrintMH

@@ -1,5 +1,6 @@
 #include "table.cpp"
 
+
 class AVLNode {
 public:
     Table table;
@@ -104,9 +105,9 @@ private:
                 }
             }
             else { // ROOT HAS 2 CHILDREN
-                Table newTable = getMaxNode(root->left);
+                Table newTable = getMinNode(root->right);
                 root->table.SetTable(newTable);
-                root->left = _deleteNode(root->left, newTable);
+                root->right = _deleteNode(root->right, newTable);
             }
         }
         // Check if the noot deleted is a leaf -> refer to ROOT HAS AT LEAST 1 CHILD
@@ -170,8 +171,8 @@ protected:
         return ((leftHeight > rightHeight)? leftHeight : rightHeight) + 1;
     }
     
-    Table getMaxNode(AVLNode *root) {
-        while(root->right) root = root->right;
+    Table getMinNode(AVLNode *root) {
+        while(root->left) root = root->left;
         return root->table;
     }
 
@@ -193,6 +194,10 @@ public:
     // GET HEIGHT
     int GetHeight() {
         return getHeightRecord(root);
+    }
+
+    AVLNode* GetRoot() {
+        return this->root;
     }
 
     bool IsFull() {
