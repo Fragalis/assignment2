@@ -50,36 +50,34 @@ public:
         return (this->_hn_left == 0 && this->_hn_right == 0);
     }
 
-    void Encode(HuffNode *ptr, vector<int> &result, vector<int> &bits, int number, int bitCount, bool caseSensitive) {
+    void Encode(HuffNode *ptr, unordered_map<char,string> &code, string char_str) {
         //cout << number << endl;
-        if(ptr->GetLeftPtr()) Encode(ptr->GetLeftPtr(), result, bits, number*2, bitCount + 1, caseSensitive);
+        if(ptr->GetLeftPtr()) Encode(ptr->GetLeftPtr(), code, char_str + "0");
 
-        if(ptr->GetRightPtr()) Encode(ptr->GetRightPtr(), result, bits, number*2+1, bitCount + 1, caseSensitive);
+        if(ptr->GetRightPtr()) Encode(ptr->GetRightPtr(), code, char_str + "1");
 
-        if(ptr->isLeaf()) {
-            char ptr_value = ptr->GetValue();
-            if(caseSensitive) { // CASE SENSITIVE
-                if('A' <= ptr_value && ptr_value <= 'Z') {
-                    result[ptr_value - 'A'] = number;
-                    bits[ptr_value - 'A'] = bitCount;
-                }
-                if('a' <= ptr_value && ptr_value <= 'z') {
-                    result[ptr_value - 'a' + 26] = number;
-                    bits[ptr_value - 'a' + 26] = bitCount;
-                }  
-            }
-            else { // NO CASE SENSITIVE -> Therefore there's no need to check UPPERCASE-LETTER (AUTO UPPERCASE)
-                result[ptr_value - 'A'] = number;         
-                bits[ptr_value - 'A'] = bitCount;     
-            }
-        }
+        if(ptr->isLeaf()) code[ptr->GetValue()] = char_str;
     }
 };
+
+void add(list<HuffNode*> &listNode, HuffNode* node) {
+    if(listNode.empty()) {
+        listNode.push_back(node);
+        return;
+    }
+    for(auto it = listNode.begin(); it != listNode.end(); ++it) {
+        if((*it)->GetWeight() > node->GetWeight()) {
+            listNode.insert(it, node);
+            return;
+        }
+    }
+    listNode.push_back(node);
+}
 
 class Compare {
 public:
     bool operator()(HuffNode *a, HuffNode *b) {
-        return a->GetWeight() > b->GetWeight();
+        return (a->GetWeight() < b->GetWeight());
     }
 };
 
@@ -93,16 +91,15 @@ void Delete(HuffNode *ptr) {
     ptr = NULL; 
 }
 
-HuffNode *GenerateHuffTree(priority_queue<HuffNode*, vector<HuffNode*>, Compare> pq) {
-    while(pq.size() > 1) {
-
+HuffNode *GenerateHuffTree(list<HuffNode*> listNode) {
+    while(listNode.size() > 1) {
         // Get Node with lowest Frequency, initalize it to left
-        HuffNode *hn_left = pq.top();
-        pq.pop();
+        HuffNode *hn_left = listNode.front();
+        listNode.pop_front();
 
         // Get Node with lowest Frequency, initalize it to right
-        HuffNode *hn_right = pq.top();
-        pq.pop();
+        HuffNode *hn_right = listNode.front();
+        listNode.pop_front();
 
         // CREATE NEW NODE:
         HuffNode *newNode = new HuffNode('.', hn_left->GetWeight() + hn_right->GetWeight());
@@ -110,109 +107,59 @@ HuffNode *GenerateHuffTree(priority_queue<HuffNode*, vector<HuffNode*>, Compare>
         newNode->SetPtrRight(hn_right);
 
         // Push it back to heap:
-        pq.push(newNode);
+        add(listNode, newNode);
     }
-    return pq.top();
+    return listNode.front();
 }
 
-int HuffmanEncoding(string name, bool caseSensitive) {
+int HuffmanEncoding(string name) {
 
     // An ARRAY to store FREQUENCY (A-Z) - (a-z) in "name"
-    vector<int> freq(52, 0);
-    string shortName = "";
+    unordered_map<char, int> frequency;
+    for(char c : name) frequency[c]++;
+    if(frequency.size() == 1) return 1;
 
-    for(int i = 0; i < (int)name.length(); ++i) {
-        char c = name[i];
-
-        if(caseSensitive) { // CASE SENSITIVE
-            if('a' <= c && c <= 'z') {
-                if(!freq[c - 'a' + 26]) shortName += c;
-                freq[c - 'a' + 26]++;
-            }
-            if('A' <= c && c <= 'Z') {
-                if(!freq[c - 'A']) shortName += c;
-                freq[c - 'A']++;
-            }
-        }
-        else {
-            if('a' <= c && c <= 'z') {
-                if(!freq[c - 'a']) shortName += c;
-                freq[c - 'a']++;
-            }
-            if('A' <= c && c <= 'Z') {
-                if(!freq[c - 'A']) shortName += c;
-                freq[c - 'A']++;
-            }
-        }
+    // INITIALIZE MIN-HEAP FOR HUFFMAN NODE AS LIST
+    list<HuffNode*> listNode;
+    for(char c = 'A'; c <= 'Z'; ++c) {
+        if(!frequency[c]) continue;
+        HuffNode *newNode = new HuffNode(c, frequency[c]);
+        add(listNode, newNode);
     }
-    // INITIALIZE MIN-HEAP FOR HUFFMAN NODE
-    priority_queue<HuffNode*, vector<HuffNode*>, Compare> pq;
-    for(int i = 0; i < 52; ++i) {
-        if(freq[i]) {
-            if(i < 26) {
-                HuffNode *newNode = new HuffNode(i + 'A', freq[i]);
-                pq.push(newNode);
-            }
-            else {
-                HuffNode *newNode = new HuffNode(i + 'a' - 26, freq[i]);
-                pq.push(newNode);
-            }
-        }
+    for(char c = 'a'; c <= 'z'; ++c) {
+        if(!frequency[c]) continue;
+        HuffNode *newNode = new HuffNode(c, frequency[c]);
+        add(listNode, newNode);
     }
 
-    HuffNode *root = GenerateHuffTree(pq);
-    // An ARRAY to store RESULT (A-Z) - (a-z) after Encoding
-    vector<int> code(52, 0);
-    vector<int> bits(52, 0);
-    root->Encode(root, code, bits, 0, 0, caseSensitive);
-    
-    // RESULT CHECK
-    // for(int i = 0; i < 26; ++i) {
-    //     cout << char(i + 'A') << ": " << code[i] << " \tBits = " << bits[i] << endl;
-    // }
+    // Generate Node
+    HuffNode *root = GenerateHuffTree(listNode);
 
-    int huffmanCode = 0;
-    int huffmanBits = 0;
+    // Huffman convert
+    unordered_map<char,string> code;
+    root->Encode(root, code, "");
+
+    // RESULT CHECK:
+    for(auto m : code) cout << m.first << " " << m.second << endl;
 
     // MAXIMUM BITS - refer to Assignment 2 Constraints
     const int MAX_BITS = 15;
+    string huffmanCode_str = "";
 
     // Traverse every char in "name" && convert
-    for(int i = 0; i < name.length(); ++i) {
+    for(int i = 0; i < (int)name.length(); ++i) {
         char c = name[i];
-        int addBits = 0; // The bit amount to add in huffmanCode
-        int excesssBits = 0; // The bit got overflowed
-        if(caseSensitive) { // CASE SENSITIVE
-            if('a' <= c && c <= 'z') addBits = bits[c - 'a' + 26];
-            if('A' <= c && c <= 'Z') addBits = bits[c - 'A'];
-        }
-        else {
-            if('a' <= c && c <= 'z') addBits = bits[c - 'a'];
-            if('A' <= c && c <= 'Z') addBits = bits[c - 'A'];           
-        }
+        huffmanCode_str += code[c];
 
-        if(huffmanBits + addBits >= MAX_BITS) excesssBits = (huffmanBits + addBits) - MAX_BITS;
-
-        // Shift left huffmanCode by (addBits - excessBits) bits
-        huffmanCode = huffmanCode << addBits - excesssBits;
-
-        // DO NOT ASK.
-        if(caseSensitive) { // CASE SENSITIVE
-            if('a' <= c && c <= 'z') huffmanCode = huffmanCode + (code[c - 'a' + 26] >> excesssBits);
-            if('A' <= c && c <= 'Z') huffmanCode = huffmanCode + (code[c - 'A'] >> excesssBits);
-        }
-        else {
-            if('a' <= c && c <= 'z') huffmanCode = huffmanCode + (code[c - 'a'] >> excesssBits);
-            if('A' <= c && c <= 'Z') huffmanCode = huffmanCode + (code[c - 'A'] >> excesssBits);
-        }
-
-        // Update added bits so far
-        huffmanBits = huffmanBits + addBits - excesssBits;
-        // cout << "letter: " << c << " after: " << huffmanCode << " bits: " << huffmanBits << endl;
-        
         // IF EXCEED: break;
-        if(huffmanBits >= MAX_BITS) break;
+        if(huffmanCode_str.length() >= MAX_BITS) break;
     }
+
+    // RESULT CHECK:
+    cout << huffmanCode_str << endl;
+
+    int huffmanCode = 0;
+    for(int i = 0; i < MAX_BITS; ++i) huffmanCode = huffmanCode * 2 + (huffmanCode_str[i] - '0');
 
     Delete(root);
     return huffmanCode;

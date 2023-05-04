@@ -54,7 +54,7 @@ void simulate(string filename) {
 	while(getline(input, line)) {
 
 		// Testing input
-		// cout << line << endl;
+		cout << line << endl;
 
 		int index = 0;
 		string keyword = "";
@@ -82,7 +82,7 @@ void simulate(string filename) {
 			// INVALID NAME (No space between, no space at end, no non-alphabet character) -> to next line
 			if(index < line.length()) continue;
 			// HuffmanEncoding(string name, bool caseSensitive)
-			int customerResult = (name.length() == 1)? 1 : HuffmanEncoding(name, 1);
+			int customerResult = HuffmanEncoding(name);
 			int customerID = customerResult%MAXSIZE + 1;
 			/*
 				If we were to order food
@@ -282,10 +282,7 @@ void simulate(string filename) {
 			continue;
 		}
 	}
-	Location_AVL->~AVLTree();
-	Location_HashTable.~HashTable();
-	LFCO_Heap.~MinHeap();
-	return;
+	delete Location_AVL;
 }
 
 void AddCustomer(const Table &customer, vector<int> &recordResult, vector<bool> &isHash,
@@ -314,7 +311,6 @@ void AddCustomer(const Table &customer, vector<int> &recordResult, vector<bool> 
 		// cout << "HASH TABLE" << endl;
 		// Location_HashTable.PrintTable();
 	}
-	return;
 }
 
 void RemoveCustomer(const Table &customer, vector<int> &recordResult, vector<bool> &isHash,
