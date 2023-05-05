@@ -54,7 +54,7 @@ void simulate(string filename) {
 	while(getline(input, line)) {
 
 		// Testing input
-		cout << line << endl;
+		// cout << line << endl;
 
 		int index = 0;
 		string keyword = "";

@@ -1,21 +1,11 @@
-REG Jhnuigfifbahjasbdfhjbasdhjf
-REG sgfuigweibjaskdfbjksadf
-REG iwehruihqwUIAGSIDiernbsandfb
-REG uewhqruihqiuwerhnbdasnbfnmasd
-REG ukajhsdfjkasbndbmnFJKHJKsdbfsabdf
+REG Johnuigfifbahjasbdfhjbasdhjf
+REG iuasgfuigweibjaskdfbjksadf
+REG iuiwehruihqwUIAGSIDiernbsandfb
+REG uiewhqruihqiuwerhnbdasnbfnmasd
+REG ukkajhsdfjkasbndbmnFJKHJKsdbfsabdf
 REG kjasdbfjksbDFFDFFfdjksabfdjkasdf
-REG Jhnuigfifbahjasbdfhjbasdhjf
-REG skjafdbkasfnmFFFFsaddnfdf
-REG Jhnuigfifbajasbdfhjbasdhjf
-REG hnuigfifbahjasbdfhjbasdhjf
-REG sfuigweibjaskdfbjksadf
-REG iwhruihqwUIAGSIDiernbsandfb
-REG uewqruihqiuwerhnbdasnbfnmasd
-REG sgfuigweibjaskdfbjksadf
-REG iwehruihqwUIAGSIDiernbsandfb
-REG Jhnuigfifbajasbdfhjbasdhjf
-REG uewhqruihqiuwerhnbdasnbfnmasd
-CLE 15
+REG skjafdbkjasfnmFFFFsaddnfdf
+CLE 5
 PrintHT
 PrintAVL
 PrintMH

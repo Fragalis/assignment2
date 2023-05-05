@@ -113,11 +113,13 @@ HuffNode *GenerateHuffTree(list<HuffNode*> listNode) {
 }
 
 int HuffmanEncoding(string name) {
+    // MAXIMUM BITS - refer to Assignment 2 Constraints
+    const int MAX_BITS = 15;
 
     // An ARRAY to store FREQUENCY (A-Z) - (a-z) in "name"
     unordered_map<char, int> frequency;
     for(char c : name) frequency[c]++;
-    if(frequency.size() == 1) return 1;
+    if(frequency.size() == 1) return (1 << min(frequency[name[0]], MAX_BITS)) - 1;
 
     // INITIALIZE MIN-HEAP FOR HUFFMAN NODE AS LIST
     list<HuffNode*> listNode;
@@ -140,26 +142,26 @@ int HuffmanEncoding(string name) {
     root->Encode(root, code, "");
 
     // RESULT CHECK:
-    for(auto m : code) cout << m.first << " " << m.second << endl;
+    // for(auto m : code) cout << m.first << " " << m.second << endl;
 
-    // MAXIMUM BITS - refer to Assignment 2 Constraints
-    const int MAX_BITS = 15;
+    // String variant
     string huffmanCode_str = "";
 
     // Traverse every char in "name" && convert
-    for(int i = 0; i < (int)name.length(); ++i) {
+    for(int i = (int)name.length() - 1; i >= 0; --i) {
         char c = name[i];
-        huffmanCode_str += code[c];
-
+        huffmanCode_str = code[c] + huffmanCode_str;
+        
         // IF EXCEED: break;
         if(huffmanCode_str.length() >= MAX_BITS) break;
     }
 
-    // RESULT CHECK:
-    cout << huffmanCode_str << endl;
-
+    // Decimal variant
+    int bits = huffmanCode_str.length();
     int huffmanCode = 0;
-    for(int i = 0; i < MAX_BITS; ++i) huffmanCode = huffmanCode * 2 + (huffmanCode_str[i] - '0');
+    for(int i = bits - MAX_BITS; i < bits; ++i) {
+        huffmanCode = (huffmanCode << 1) + (huffmanCode_str[i] - '0');
+    }
 
     Delete(root);
     return huffmanCode;

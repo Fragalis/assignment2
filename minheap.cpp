@@ -49,6 +49,14 @@ private:
                 swap(orders[position], orders[parent]);
                 _reheapUp(parent);
             }
+            else if(orders[position].count == orders[parent].count) {
+                int step = find(time.begin(), time.end(), orders[position].id) - 
+                            find(time.begin(), time.end(), orders[parent].id);
+                if(step < 0) {
+                    swap(orders[position], orders[parent]);
+                    _reheapUp(parent);
+                }
+            }
         }
     }
 
@@ -67,11 +75,20 @@ private:
                     if(step < 0) smaller = right;
                     else smaller = left;
                 }
+                else smaller = left;
             }
             else smaller = left;
-            if(orders[position].count >= orders[smaller].count) {
+            if(orders[position].count > orders[smaller].count) {
                 swap(orders[position], orders[smaller]);
                 _reheapDown(smaller);
+            }
+            else if(orders[position].count == orders[smaller].count) {
+                int step = find(time.begin(), time.end(), orders[position].id) - 
+                            find(time.begin(), time.end(), orders[smaller].id);
+                if(step > 0) {
+                    swap(orders[position], orders[smaller]);
+                    _reheapDown(smaller);
+                }
             }
         }
     }
