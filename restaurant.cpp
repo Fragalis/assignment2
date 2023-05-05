@@ -1,7 +1,679 @@
 #include "main.h"
-#include "huffman_code.cpp"
-#include "avl.cpp"
-#include "minheap.cpp"
+
+/* HUFFMAN ENCODING SECTION */
+class HuffNode {
+private:
+    char _value;
+    int _weight;
+    HuffNode *_hn_left;
+    HuffNode *_hn_right;
+
+public:
+    HuffNode(char value = 0, int weight = 0) {
+        this->_value = value;
+        this->_weight = weight;
+        this->_hn_left = NULL;
+        this->_hn_right = NULL;
+    }
+
+    ~HuffNode() {
+        this->_value = 0;
+        this->_weight = 0;
+        _hn_left = 0;
+        _hn_right = 0;
+    }
+
+    char GetValue() {
+        return this->_value;
+    }
+
+    int GetWeight() {
+        return this->_weight;
+    }
+
+    HuffNode *GetLeftPtr() const {
+        return this->_hn_left;
+    }
+
+    void SetPtrLeft(HuffNode *hn_left) {
+        this->_hn_left = hn_left;
+    }
+
+    HuffNode *GetRightPtr() const {
+        return this->_hn_right;
+    }
+
+    void SetPtrRight(HuffNode *hn_right) {
+        this->_hn_right = hn_right;
+    }
+
+    bool isLeaf() {
+        return (this->_hn_left == 0 && this->_hn_right == 0);
+    }
+
+    void Encode(HuffNode *ptr, unordered_map<char,string> &code, string char_str) {
+        //cout << number << endl;
+        if(ptr->GetLeftPtr()) Encode(ptr->GetLeftPtr(), code, char_str + "0");
+
+        if(ptr->GetRightPtr()) Encode(ptr->GetRightPtr(), code, char_str + "1");
+
+        if(ptr->isLeaf()) code[ptr->GetValue()] = char_str;
+    }
+};
+
+void add(list<HuffNode*> &listNode, HuffNode* node) {
+    if(listNode.empty()) {
+        listNode.push_back(node);
+        return;
+    }
+    for(auto it = listNode.begin(); it != listNode.end(); ++it) {
+        if((*it)->GetWeight() > node->GetWeight()) {
+            listNode.insert(it, node);
+            return;
+        }
+    }
+    listNode.push_back(node);
+}
+
+class Compare {
+public:
+    bool operator()(HuffNode *a, HuffNode *b) {
+        return (a->GetWeight() < b->GetWeight());
+    }
+};
+
+
+void Delete(HuffNode *ptr) {
+    if(!ptr) return;
+    if(ptr->GetLeftPtr()) Delete(ptr->GetLeftPtr());
+    if(ptr->GetRightPtr()) Delete(ptr->GetRightPtr());
+    // cout << "DELETE " << ptr->GetValue() << " : " << ptr->GetWeight() << endl; 
+    delete ptr;
+    ptr = NULL; 
+}
+ 
+HuffNode *GenerateHuffTree(list<HuffNode*> listNode) {
+    while(listNode.size() > 1) {
+        // Get Node with lowest Frequency, initalize it to left
+        HuffNode *hn_left = listNode.front();
+        listNode.pop_front();
+
+        // Get Node with lowest Frequency, initalize it to right
+        HuffNode *hn_right = listNode.front();
+        listNode.pop_front();
+
+        // CREATE NEW NODE:
+        HuffNode *newNode = new HuffNode('.', hn_left->GetWeight() + hn_right->GetWeight());
+        newNode->SetPtrLeft(hn_left);
+        newNode->SetPtrRight(hn_right);
+
+        // Push it back to heap:
+        add(listNode, newNode);
+    }
+    return listNode.front();
+}
+
+int HuffmanEncoding(string name) {
+    // MAXIMUM BITS - refer to Assignment 2 Constraints
+    const int MAX_BITS = 15;
+
+    // An ARRAY to store FREQUENCY (A-Z) - (a-z) in "name"
+    unordered_map<char, int> frequency;
+    for(char c : name) frequency[c]++;
+    if(frequency.size() == 1) return (1 << min(frequency[name[0]], MAX_BITS)) - 1;
+
+    // INITIALIZE MIN-HEAP FOR HUFFMAN NODE AS LIST
+    list<HuffNode*> listNode;
+    for(char c = 'A'; c <= 'Z'; ++c) {
+        if(!frequency[c]) continue;
+        HuffNode *newNode = new HuffNode(c, frequency[c]);
+        add(listNode, newNode);
+    }
+    for(char c = 'a'; c <= 'z'; ++c) {
+        if(!frequency[c]) continue;
+        HuffNode *newNode = new HuffNode(c, frequency[c]);
+        add(listNode, newNode);
+    }
+
+    // Generate Node
+    HuffNode *root = GenerateHuffTree(listNode);
+
+    // Huffman convert
+    unordered_map<char,string> code;
+    root->Encode(root, code, "");
+
+    // String variant
+    string huffmanCode_str = "";
+
+    // Traverse every char in "name" && convert
+    for(int i = (int)name.length() - 1; i >= 0; --i) {
+        char c = name[i];
+        huffmanCode_str = code[c] + huffmanCode_str;
+        
+        // IF EXCEED: break;
+        if(huffmanCode_str.length() >= MAX_BITS) break;
+    }
+
+    // Decimal variant
+    int bits = huffmanCode_str.length();
+    int huffmanCode = 0;
+    for(int i = bits - MAX_BITS; i < bits; ++i) {
+        huffmanCode = (huffmanCode << 1) + (huffmanCode_str[i] - '0');
+    }
+
+    Delete(root);
+    return huffmanCode;
+}
+/* END HUFFMAN ENCODING SECTION */
+
+/* HASHTABLE SECTION */
+class Table {
+public:
+    int id, result;
+    string name;
+    Table(int id = 0, int result = 0, string name = "") {
+        this->id = id;
+        this->result = result;
+        this->name = name;
+    }
+    ~Table() {
+        ResetTable();
+    }
+
+    void SetTable(const Table &table) {
+        this->id = table.id;
+        this->result = table.result;
+        this->name = table.name;
+    }
+
+    void SetTable(const int &id, const int &result, const string &name) {
+        this->id = id;
+        this->result = result;
+        this->name = name;
+    }
+
+    void ResetTable() { 
+        id = 0;
+        result = 0;
+        name = "";
+    }
+
+    bool IsEmpty() {
+        return (id == 0);
+    }
+
+    bool Equal(const int &id, const int &result) {
+        return (this->id == id) && (this->result == result);
+    }
+
+    bool Equal(const int &id, const int &result, const string &name) {
+        return (this->id == id) && (this->result == result) && (this->name == name);
+    }
+};
+
+class HashTable {
+private:
+    const int capacity = MAXSIZE>>1;
+    Table key[MAXSIZE>>1];
+    int size;
+
+    // ASSUME HASHTABLE IS NEVER FULL
+    int _findAddress(int address) { // This is called when Linear Probing is needed.
+        int index = address;
+
+        // Traverse the HASHMAP for empty table
+        while(key[index%capacity].IsEmpty() == false) ++index;
+        return (index%capacity);
+    }
+
+    string _findName(int id, int result) {
+        for(int i = 0; i < capacity; ++i) {
+            if(key[i].Equal(id, result)) return key[i].name;
+        }
+        return "";
+    }
+
+    void _clear() {
+        for(int i = 0; i < capacity; ++i) key[i].ResetTable();
+    }
+public:
+    HashTable() {
+        this->size = 0;
+        for(int i = 0; i < capacity; ++i) key[i].ResetTable();
+    }
+
+    ~HashTable() {
+        Clear();
+    }
+
+    int GetSize() {
+        return this->size;
+    }
+
+    int GetCapacity() {
+        return this->capacity;
+    }
+
+    Table GetTable(int address) {
+        return key[address];
+    }
+
+    bool IsFull() {
+        return (this->size >= capacity);
+    }
+
+    void AddTable(Table table, int address) {
+        if(IsFull() || address < 0 || address >= capacity) return;
+        if(key[address].IsEmpty() == false) address = _findAddress(address);
+        key[address].SetTable(table);
+        ++size;
+    }
+
+    // Remove table which has the id (id)
+    void RemoveTable(int id) {
+        for(int i = 0; i < capacity; ++i) {
+            if(id == key[i].id) {
+                key[i].ResetTable();
+                return;
+            }
+        }
+    }
+
+    string FindName(int id, int result) {
+        return _findName(id, result);
+    }
+
+    void Clear() {
+        _clear();
+        this->size = 0;
+    }
+};
+/* END HASHTABLE SECTION */
+
+/* AVL TREE SECTION */
+class AVLNode {
+public:
+    Table table;
+    AVLNode *left, *right;
+
+    AVLNode(Table table) {
+        this->table.SetTable(table);
+        this->left = NULL;
+        this->right = NULL;
+    }
+    ~AVLNode() {
+        this->table.ResetTable();
+        this->left = NULL;
+        this->right = NULL;
+    }
+};
+
+class AVLTree {
+private:
+    const int capacity = MAXSIZE>>1;
+    AVLNode *root;
+    int size;
+    
+    // UNBALANCE RIGHT TREE -> LEFT ROTATION
+    AVLNode* _rotateLeft(AVLNode *node) {
+        // cout << "ROTATE LEFT" << endl;
+
+        AVLNode *rightChild = node->right;
+        AVLNode *temp = rightChild->left;
+        rightChild->left = node;
+        node->right = temp;
+        return rightChild;
+    }
+    
+    // UNBALANCE RIGHT TREE -> LEFT ROTATION
+    AVLNode* _rotateRight(AVLNode *node) { 
+        // cout << "ROTATE RIGHT" << endl;        
+        
+        AVLNode *leftChild = node->left;
+        AVLNode *temp = leftChild->right;
+        leftChild->right = node;
+        node->left = temp;
+        return leftChild;
+    }
+
+    // INSERT Node
+    AVLNode* _insertNode(AVLNode *root, Table table) {
+        if(!root) {
+            AVLNode *node = new AVLNode(table);
+            return node;
+        }
+        if(table.result < root->table.result) root->left = _insertNode(root->left, table);
+        if(table.result >= root->table.result) root->right = _insertNode(root->right, table);
+
+        int balance = getBalance(root);
+        
+        // RIGHT ORIENTED -> ROTATE LEFT
+        // cout << "BALANCE = " << balance << endl;
+        if(balance > 1) {
+            if(table.result < root->right->table.result) { // When too much right node
+                root->right = _rotateRight(root->right);
+            }
+            return _rotateLeft(root);
+        }
+
+        // LEFT ORIENTED -> ROTATE RIGHT
+        if(balance < -1) {
+            if(table.result > root->left->table.result) { // When too much left node
+                root->left = _rotateLeft(root->left);
+            }
+            return _rotateRight(root);   
+        }
+        return root;
+    }
+
+    // DELETE node which matchs Table table
+    AVLNode* _deleteNode(AVLNode *root, Table table) {
+        if(!root) return root;
+
+        // Traverse left tree if result < root->result
+        if(table.result < root->table.result || table.id != root->table.id) root->left = _deleteNode(root->left, table);
+
+        // Traverse right tree if result > root->result
+        if(table.result > root->table.result || table.id != root->table.id) root->right = _deleteNode(root->right, table);
+
+        // Found Node to delete
+        else {
+            if(!root->left || !root->right) { // ROOT HAS AT LEAST 1 CHILD
+                AVLNode *temp = (root->left)? root->left : root->right;
+
+                if(temp == NULL) { // ROOT is LEAF
+                    temp = root;
+                    root = NULL;
+                }
+                else root->table.SetTable(temp->table);
+
+                delete temp;
+                if(root) { // RESET POINTER
+                    root->left = NULL;
+                    root->right = NULL;
+                }
+            }
+            else { // ROOT HAS 2 CHILDREN
+                Table newTable = getMinNode(root->right);
+                root->table.SetTable(newTable);
+                root->right = _deleteNode(root->right, newTable);
+            }
+        }
+        // Check if the noot deleted is a leaf -> refer to ROOT HAS AT LEAST 1 CHILD
+        if(!root) return root;
+        int balance = getBalance(root);
+        // RIGHT ORIENTED -> ROTATE LEFT
+        if(balance > 1) {
+            if(getBalance(root->right) < -1) { // When too much left node on right child
+                root->right = _rotateRight(root->right);
+            }
+            return _rotateLeft(root);
+        }
+
+        // LEFT ORIENTED -> ROTATE RIGHT
+        if(balance < -1) {
+            if(getBalance(root->left) > 1) { // When too much right node on left child
+                root->left = _rotateLeft(root->left);
+            }
+            return _rotateRight(root);   
+        }
+        return root;
+    }
+
+    void _clear(AVLNode *node) {
+        if(!node) return;
+        if(node->left) _clear(node->left);
+        if(node->right) _clear(node->right);
+        delete node;
+        node = NULL;
+    }
+
+    string _findName(AVLNode *node, int &id, int &result) {
+        if(!node) return "";
+        Table curr = node->table;
+        if(curr.Equal(id, result)) return curr.name;
+        if(curr.result > result || curr.id != id) return _findName(node->right, id, result);
+        if(curr.result > result || curr.id != id) return _findName(node->left, id, result);
+        return "";
+    }
+
+protected:
+    int getHeightRecord(AVLNode *node) {
+        if(!node) return 0;
+        int leftHeight = (node->left)? this->getHeightRecord(node->left) : 0;
+        int rightHeight = (node->right)? this->getHeightRecord(node->right) : 0;
+        return ((leftHeight > rightHeight)? leftHeight : rightHeight) + 1;
+    }
+    
+    Table getMinNode(AVLNode *root) {
+        while(root->left) root = root->left;
+        return root->table;
+    }
+
+    int getBalance(AVLNode *root) {
+        if(!root) return 0;
+        return getHeightRecord(root->right) - getHeightRecord(root->left);
+    }
+public:
+
+    AVLTree() {
+        this->root = NULL;
+        size = 0;
+    }
+    ~AVLTree() {
+        Clear();
+        // cout << "DESTRUCTOR" << endl;
+    }
+    
+    // GET HEIGHT
+    int GetHeight() {
+        return getHeightRecord(root);
+    }
+
+    AVLNode* GetRoot() {
+        return this->root;
+    }
+
+    bool IsFull() {
+        return (this->size >= capacity);
+    }
+
+    void InsertTable(Table table) {
+        if(size < capacity) {
+            root = _insertNode(root, table);
+            ++size;
+        }
+    }
+
+    void DeleteTable(Table table) {
+        if(size > 0) {
+            root = _deleteNode(root, table);
+            --size;
+        }
+    }
+
+    string FindName(int id, int result) {
+        return _findName(this->root, id, result);
+    }
+
+    void Clear() {
+        _clear(root);
+        root = NULL;
+        size = 0;
+    }
+};
+/* END AVL TREE SECTION */
+
+/* MIN HEAP SECTION */
+struct order {
+    int id;
+    int count;
+    void reset() {
+        id = 0;
+        count = 0;
+    }
+};
+
+class MinHeap {
+private:
+    int capacity = MAXSIZE;
+    order orders[MAXSIZE];
+    int size;
+    vector<int> time;
+    // Always call when a new customer is assigned
+    void _push(int id) {
+        // Heap is full
+        if(IsFull()) return;
+        
+        // Else
+        orders[size].id = id;
+        orders[size].count = 1;
+        _reheapUp(size);
+        ++size;
+        time.push_back(id);
+    }
+
+    void _pop(int id) {
+        // Heap is empty
+        if(size <= 0) return;
+    
+        // Else
+        int idx = 0;
+        while(orders[idx].id != id) ++idx;
+        time.erase(find(time.begin(), time.end(), id));
+        orders[idx] = orders[size - 1];
+        orders[size - 1].reset();
+        --size;
+        _reheapDown(idx);
+    }
+
+    void _reheapUp(int position) {
+        if(position > 0) {
+            int parent = (position - 1) / 2;
+            if(orders[position].count < orders[parent].count) {
+                swap(orders[position], orders[parent]);
+                _reheapUp(parent);
+            }
+            else if(orders[position].count == orders[parent].count) {
+                int step = find(time.begin(), time.end(), orders[position].id) - 
+                            find(time.begin(), time.end(), orders[parent].id);
+                if(step < 0) {
+                    swap(orders[position], orders[parent]);
+                    _reheapUp(parent);
+                }
+            }
+        }
+    }
+
+    void _reheapDown(int position) {
+        int left = 2 * position + 1;
+        int right = 2 * position + 2;
+        int smaller = -1;
+        if(left < size) {
+            if(right < size) {
+                // IF right.count < left.count
+                if(orders[right].count < orders[left].count) smaller = right;
+                // IF right.count == left.count
+                else if(orders[right].count == orders[left].count) {
+                    int step = find(time.begin(), time.end(), orders[right].id) - 
+                               find(time.begin(), time.end(), orders[left].id);
+                    if(step < 0) smaller = right;
+                    else smaller = left;
+                }
+                else smaller = left;
+            }
+            else smaller = left;
+            if(orders[position].count > orders[smaller].count) {
+                swap(orders[position], orders[smaller]);
+                _reheapDown(smaller);
+            }
+            else if(orders[position].count == orders[smaller].count) {
+                int step = find(time.begin(), time.end(), orders[position].id) - 
+                            find(time.begin(), time.end(), orders[smaller].id);
+                if(step > 0) {
+                    swap(orders[position], orders[smaller]);
+                    _reheapDown(smaller);
+                }
+            }
+        }
+    }
+
+    int _getOrderCount(int id) {
+        for(int i = 0; i < size; ++i) {
+            if(orders[i].id == id) return orders[i].count;
+        }
+        return 0;
+    }
+
+    void _print(int position) {
+        if(position >= size) return;
+        // Print data at position
+        cout << orders[position].id << "-" << orders[position].count << "\n";
+        // Traverse to left
+        _print(2 * position + 1);
+        // Traverse to right
+        _print(2 * position + 2);
+    }
+public:
+    MinHeap() {
+        size = 0;
+        for(int i = 0; i < MAXSIZE; ++i) {
+            orders[i].count = 0;
+            orders[i].id = 0;
+        }
+    }
+
+    ~MinHeap() {}
+
+    bool IsFull() {
+        return (size >= capacity);
+    }
+
+    // If the id is new, we add order{id, 1} to Heap
+    // Else, we increment the order count by 1
+    void Push(int id) {
+        // We traverse the heap for id
+        for(int i = 0; i < size; ++i) {
+            // If we found the id
+            if(orders[i].id == id) {
+                // Increment the count, then reheapDown at this position and return
+                orders[i].count++;
+                _reheapDown(i);
+                return;
+            }
+        }
+        // Here if the id is new <- we can't find it in that loop before
+        _push(id);
+    }
+
+    // This id will always be available due to this being called when removal is needed
+    void Pop(int id) {
+        _pop(id);
+    }
+
+    // Get the id of customer who orders the least (always be orders[0])
+    int Front() {
+        if(size <= 0) return -1;
+        return orders[0].id;
+    }
+
+    int GetOrder(int id) {
+        return _getOrderCount(id);
+    }
+
+    void PrintHeap() {
+        cout << "MIN HEAP: [\n";
+        for(int i = 0; i < size; ++i) {
+            cout << "ID: " << orders[i].id << " Count: " << orders[i].count << "\n";
+        }
+        cout << "]\n";
+    }
+
+    void Print_Command() {
+        _print(0);
+    }
+};
+/* END MIN HEAP SECTION*/
 
 // Always call when there is a REG
 void AddCustomer(const Table &customer, vector<int> &recordResult, vector<bool> &isHash,
@@ -18,7 +690,7 @@ void PrintAVL(AVLTree *&Location_AVL, MinHeap &LFCO_Heap);
 void PrintMH(MinHeap &LFCO_Heap);
 
 void simulate(string filename) {
-	ifstream input("test.txt");
+	ifstream input(filename);
 	// CHECK FOR VALID FILE INPUT
 	if(!input) return;
 	
@@ -60,27 +732,28 @@ void simulate(string filename) {
 		string keyword = "";
 
 		// READ KEYWORD
-		for(index; index < line.length() and line[index] != ' '; ++index) keyword += line[index];
+		for(int i = 0; i < (int)line.length() and line[i] != ' '; ++i) keyword += line[i];
 		
 		// PUSH INDEX TO NEXT ELEMENT
-		++index;
+		index += ((int)keyword.length() + 1);
 
 		if(keyword == "REG") {
 			bool isFull = Location_AVL->IsFull() && Location_HashTable.IsFull();
 			bool isOrder = false;
 			string name = "";
 			// READ NAME
-			for(index; index < line.length() and line[index] != ' '; ++index) {
-				char c = line[index];
+			for(int i = index; i < (int)line.length() and line[i] != ' '; ++i) {
+				char c = line[i];
 				// If character is valid (A-Z)(a-z)
 				if(('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')) name += c;
 				
 				// If not valid -> break;
 				else break;
 			}
+            index += ((int)name.length());
 
 			// INVALID NAME (No space between, no space at end, no non-alphabet character) -> to next line
-			if(index < line.length()) continue;
+			if(index < (int)line.length()) continue;
 			// HuffmanEncoding(string name, bool caseSensitive)
 			int customerResult = HuffmanEncoding(name);
 			int customerID = customerResult%MAXSIZE + 1;
@@ -182,7 +855,6 @@ void simulate(string filename) {
 
 				// If the customer order -> use that Push(id) method
 				LFCO_Heap.Push(customerID);
-				LFCO_Heap.Print_Command();
 			}
 		}
 
@@ -197,7 +869,7 @@ void simulate(string filename) {
 				++index;
 			}
 
-			for(index; index < line.length() and line[index] != ' '; ++index) {
+			for(int index; index < (int)line.length() and line[index] != ' '; ++index) {
 				char c = line[index];
 				// If character is valid (0-9)
 				if('0' <= c && c <= '9') temp += c;
@@ -206,7 +878,7 @@ void simulate(string filename) {
 			}
 
 			// INVALID NUMBER (No space between, no space at end, no non-numeric character) -> to next line
-			if(index < line.length()) continue;
+			if(index < (int)line.length()) continue;
 			int number = stoi(temp) * (isNegative? -1 : 1); // If negative -> multiply it with -1
 
 			if(number < 1) { // Delete all Hash-Table content
@@ -318,7 +990,6 @@ void RemoveCustomer(const Table &customer, vector<int> &recordResult, vector<boo
 				 AVLTree *&Location_AVL) {
 	
 	// Take elements from customer
-	int customerResult = customer.result;
 	int customerID = customer.id;
 
 	// The table we delete is in HashTable Area
