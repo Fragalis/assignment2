@@ -87,7 +87,6 @@ void Delete(HuffNode *ptr) {
     if(!ptr) return;
     if(ptr->GetLeftPtr()) Delete(ptr->GetLeftPtr());
     if(ptr->GetRightPtr()) Delete(ptr->GetRightPtr());
-    // cout << "DELETE " << ptr->GetValue() << " : " << ptr->GetWeight() << endl; 
     delete ptr;
     ptr = NULL; 
 }
@@ -142,6 +141,9 @@ int HuffmanEncoding(string name) {
     unordered_map<char,string> code;
     root->Encode(root, code, "");
 
+    // We don't need this anymore
+    Delete(root);
+
     // String variant
     string huffmanCode_str = "";
 
@@ -157,11 +159,12 @@ int HuffmanEncoding(string name) {
     // Decimal variant
     int bits = huffmanCode_str.length();
     int huffmanCode = 0;
-    for(int i = bits - MAX_BITS; i < bits; ++i) {
-        huffmanCode = (huffmanCode << 1) + (huffmanCode_str[i] - '0');
+    if(bits <= MAX_BITS) {
+        for(int i = 0; i < bits; ++i) huffmanCode = (huffmanCode << 1) + (huffmanCode_str[i] - '0');
+        return huffmanCode;
     }
 
-    Delete(root);
+    for(int i = bits - MAX_BITS; i < bits; ++i) huffmanCode = (huffmanCode << 1) + (huffmanCode_str[i] - '0');
     return huffmanCode;
 }
 /* END HUFFMAN ENCODING SECTION */
@@ -226,13 +229,6 @@ private:
         return (index%capacity);
     }
 
-    string _findName(int id, int result) {
-        for(int i = 0; i < capacity; ++i) {
-            if(key[i].Equal(id, result)) return key[i].name;
-        }
-        return "";
-    }
-
     void _clear() {
         for(int i = 0; i < capacity; ++i) key[i].ResetTable();
     }
@@ -279,8 +275,11 @@ public:
         }
     }
 
-    string FindName(int id, int result) {
-        return _findName(id, result);
+    bool FindTable(int id, int result, string name) {
+        for(int i = 0; i < capacity; ++i) {
+            if(key[i].Equal(id, result, name)) return true;
+        }
+        return false;
     }
 
     void Clear() {
@@ -428,13 +427,17 @@ private:
         node = NULL;
     }
 
-    string _findName(AVLNode *node, int &id, int &result) {
-        if(!node) return "";
+    bool _search(AVLNode *node, int &id, int &result, string &name) {
+        if(!node) return false;
         Table curr = node->table;
-        if(curr.Equal(id, result)) return curr.name;
-        if(curr.result > result || curr.id != id) return _findName(node->right, id, result);
-        if(curr.result > result || curr.id != id) return _findName(node->left, id, result);
-        return "";
+        if(curr.Equal(id, result, name)) return true;
+        if(curr.result > result) return _search(node->left, id, result, name);
+        else if(curr.result < result) return _search(node->right, id, result, name);
+        else {
+            if(curr.id != id)
+                return _search(node->left, id, result, name) || _search(node->right, id, result, name);
+        }
+        return false;
     }
 
 protected:
@@ -492,8 +495,8 @@ public:
         }
     }
 
-    string FindName(int id, int result) {
-        return _findName(this->root, id, result);
+    bool FindTable(int id, int result, string name) {
+        return _search(this->root, id, result, name);
     }
 
     void Clear() {
@@ -521,16 +524,15 @@ private:
     int size;
     vector<int> time;
     // Always call when a new customer is assigned
-    void _push(int id) {
+    void _push(int id, int count) {
         // Heap is full
         if(IsFull()) return;
         
         // Else
         orders[size].id = id;
-        orders[size].count = 1;
+        orders[size].count = count;
         _reheapUp(size);
         ++size;
-        time.push_back(id);
     }
 
     void _pop(int id) {
@@ -540,7 +542,6 @@ private:
         // Else
         int idx = 0;
         while(orders[idx].id != id) ++idx;
-        time.erase(find(time.begin(), time.end(), id));
         orders[idx] = orders[size - 1];
         orders[size - 1].reset();
         --size;
@@ -637,17 +638,21 @@ public:
             // If we found the id
             if(orders[i].id == id) {
                 // Increment the count, then reheapDown at this position and return
-                orders[i].count++;
-                _reheapDown(i);
+                int order_id = orders[i].id;
+                int order_count = orders[i].count + 1;
+                _pop(order_id);
+                _push(order_id, order_count);
                 return;
             }
         }
         // Here if the id is new <- we can't find it in that loop before
-        _push(id);
+        time.push_back(id);
+        _push(id, 1);
     }
 
     // This id will always be available due to this being called when removal is needed
     void Pop(int id) {
+        time.erase(find(time.begin(), time.end(), id));
         _pop(id);
     }
 
@@ -659,14 +664,6 @@ public:
 
     int GetOrder(int id) {
         return _getOrderCount(id);
-    }
-
-    void PrintHeap() {
-        cout << "MIN HEAP: [\n";
-        for(int i = 0; i < size; ++i) {
-            cout << "ID: " << orders[i].id << " Count: " << orders[i].count << "\n";
-        }
-        cout << "]\n";
     }
 
     void Print_Command() {
@@ -719,15 +716,12 @@ void simulate(string filename) {
 	list<int> LRCO_List;
 
 	// A Min-Heap to store customer id and frequency, refer to OPT = 3
+    // First customer to order the least is always on top
 	MinHeap LFCO_Heap;
 
 	// INITIAL COMMAND LINE INPUT
 	string line = "";
 	while(getline(input, line)) {
-
-		// Testing input
-		// cout << line << endl;
-
 		int index = 0;
 		string keyword = "";
 
@@ -754,27 +748,21 @@ void simulate(string filename) {
 
 			// INVALID NAME (No space between, no space at end, no non-alphabet character) -> to next line
 			if(index < (int)line.length()) continue;
-			// HuffmanEncoding(string name, bool caseSensitive)
 			int customerResult = HuffmanEncoding(name);
-			int customerID = customerResult%MAXSIZE + 1;
-			/*
-				If we were to order food
-				The code must be here to check 
-				if REG <NAME> is actually an order, not a register command
-			 */
+			int customerID = customerResult % MAXSIZE + 1;
 
 			// If Result Match, we need to check if name matches
-			for(int id = customerID; id <= customerID + MAXSIZE; ++id) {
+			for(int id = 1; id <= MAXSIZE; ++id) {
 
 				// If result matches, there's a chance that the name matches
-				if(RecordResult[(id - 1) % MAXSIZE + 1] == customerResult) {
+				if(RecordResult[id] == customerResult) {
 					// If the name matches
 					int result = customerResult;
 					if(IsHash[id]) {
-						if(Location_HashTable.FindName(id, result) == name) isOrder = true;
+						if(Location_HashTable.FindTable(id, result, name)) isOrder = true;
 					}
 					else {
-						if(Location_AVL->FindName(id, result) == name) isOrder = true;
+						if(Location_AVL->FindTable(id, result, name)) isOrder = true;
 					}
 				}
 				
@@ -785,9 +773,6 @@ void simulate(string filename) {
 					break;
 				}
 			}
-
-			// EXECUTING REG COMMAND
-
 			// If it's not an order
 			// We traverse the table vector to find empty table
 			if(!isOrder) {
@@ -813,7 +798,6 @@ void simulate(string filename) {
 					}
 
 					// If OPT = 2 -> LFCO (a heap will be enough)
-					// Ignore the customer's arrival time for now
 					if(OPT == 2) {
 						removalID = LFCO_Heap.Front();
 						LFCO_Heap.Pop(removalID);
@@ -837,13 +821,9 @@ void simulate(string filename) {
 				// Call AddCustomer(param) methods
 				AddCustomer(customer, RecordResult, IsHash, Location_HashTable, Location_AVL);
 
-				// Add customer to FIFO queue
+                // Push to queues
 				FIFO_Queue.push_back(customerID);
-
-				// Add customer to LRCO list
 				LRCO_List.push_back(customerID);
-
-				// Add customer to LFCO heap
 				LFCO_Heap.Push(customerID);
 			}
 
@@ -852,8 +832,6 @@ void simulate(string filename) {
 				// If the customer order -> push that customerID to back
 				LRCO_List.remove(customerID);
 				LRCO_List.push_back(customerID);
-
-				// If the customer order -> use that Push(id) method
 				LFCO_Heap.Push(customerID);
 			}
 		}
@@ -861,7 +839,6 @@ void simulate(string filename) {
 		else if(keyword == "CLE") {
 			bool isNegative = false;
 			string temp = "";
-			// READ NAME
 			
 			// Check if that number is negative:
 			if(line[index] == '-') {
@@ -869,25 +846,21 @@ void simulate(string filename) {
 				++index;
 			}
 
-			for(int index; index < (int)line.length() and line[index] != ' '; ++index) {
-				char c = line[index];
+			for(int i = index; i < (int)line.length() && line[i] != ' '; ++i) {
+				char c = line[i];
 				// If character is valid (0-9)
 				if('0' <= c && c <= '9') temp += c;
 				// If not valid -> break;
 				else break;
 			}
-
+            index += temp.length();
 			// INVALID NUMBER (No space between, no space at end, no non-numeric character) -> to next line
 			if(index < (int)line.length()) continue;
 			int number = stoi(temp) * (isNegative? -1 : 1); // If negative -> multiply it with -1
 
 			if(number < 1) { // Delete all Hash-Table content
 				for(auto it = FIFO_Queue.begin(); it != FIFO_Queue.end(); ++it) {
-					// For every table which has id (i)
-					// If table is in HashTable Area (IsHash[i] = true)
-					// We reset all the query (FIFO) (LRCO) (LFCO) and RecordResult;
 					if(IsHash[*it]) {
-						// cout << *it << endl;
 						int id = *it;
 						RecordResult[id] = -1;
 						LRCO_List.remove(id);
@@ -897,17 +870,11 @@ void simulate(string filename) {
 						it = newIt;
 					}
 				}
-
-				// We resetted everything
-				// Now we Clear the Location
 				Location_HashTable.Clear();
 			}
 
 			else if(number > MAXSIZE) { // Delete all AVL content
 				for(auto it = FIFO_Queue.begin(); it != FIFO_Queue.end(); ++it) {
-					// For every table which has id (i)
-					// If table is in AVL Area (IsHash[i] = false)
-					// We reset all the query (FIFO) (LRCO) (LFCO) and RecordResult;
 					if(!IsHash[*it]) {
 						cout << *it << endl;
 						int id = *it;
@@ -919,16 +886,10 @@ void simulate(string filename) {
 						it = newIt;
 					}
 				}
-
-				// We resetted everything
-				// Now we Clear the Location
 				Location_AVL->Clear();
 			}
 			else { // Delete Specific Table
-				// If table is empty -> continue;
 				if(RecordResult[number] == -1) continue;
-
-				// If not continue, call the RemoveCustomer(param) method
 				Table customer;
 				customer.SetTable(number, RecordResult[number], "");
 				RemoveCustomer(customer, RecordResult, IsHash, Location_HashTable, Location_AVL);
@@ -972,16 +933,12 @@ void AddCustomer(const Table &customer, vector<int> &recordResult, vector<bool> 
 	if(customerResult%2 == 0 || Location_HashTable.IsFull()) {
 		Location_AVL->InsertTable(customer);
 		isHash[customerID] = false;
-		// cout << "AVL TREE" << endl;
-		// Location_AVL->PrintTree();
 	}
 
 	// IF Customer is located in Hash-Table || AVL Area is Full
 	else if(customerResult%2 == 1 || Location_AVL->IsFull()) {
 		Location_HashTable.AddTable(customer, customerResult%(MAXSIZE>>1));
 		isHash[customerID] = true;
-		// cout << "HASH TABLE" << endl;
-		// Location_HashTable.PrintTable();
 	}
 }
 
@@ -995,14 +952,13 @@ void RemoveCustomer(const Table &customer, vector<int> &recordResult, vector<boo
 	// The table we delete is in HashTable Area
 	if(isHash[customerID]) {
 		Location_HashTable.RemoveTable(customerID);
-		recordResult[customerID] = -1;
 	}
 	// The table we delete is in AVL Area
 	else {
 		Location_AVL->DeleteTable(customer);
-		recordResult[customerID] = -1;
 		isHash[customerID] = true;
 	}
+    recordResult[customerID] = -1;
 }
 
 void PrintHT(HashTable &Location_HashTable, MinHeap &LFCO_Heap) {

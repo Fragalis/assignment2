@@ -37,6 +37,8 @@
   "C_Cpp_Runner.showCompilationTime": false,
   "files.associations": {
     "chrono": "cpp",
-    "variant": "cpp"
+    "variant": "cpp",
+    "*.tcc": "cpp",
+    "ostream": "cpp"
   }
 }
