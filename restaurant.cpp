@@ -765,7 +765,6 @@ void simulate(string filename) {
 						if(Location_AVL->FindTable(id, result, name)) isOrder = true;
 					}
 				}
-				
 				// If it's an order
 				if(isOrder) {
 					// Reset customerID to id
